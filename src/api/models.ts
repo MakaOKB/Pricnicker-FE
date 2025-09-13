@@ -1,5 +1,9 @@
-import apiClient from './client';
+import apiClient, { apiClientWithRetry, checkApiHealth } from './client';
 import { Model, ModelInfo, FilterOptions, SearchResult, BrandsResponse, ErrorResponse, ProviderInfo } from '../types';
+
+// 配置：是否使用重试机制
+const USE_RETRY = import.meta.env.PROD || import.meta.env.VITE_USE_API_RETRY === 'true';
+const client = USE_RETRY ? apiClientWithRetry : apiClient;
 
 // 辅助函数：获取模型的最低输入价格
 function getMinInputPrice(model: Model): number {
@@ -25,13 +29,15 @@ export class ModelsApi {
   // 获取全局模型列表 (根据API规范: GET /v1/query/models)
   static async getModels(): Promise<Model[]> {
     try {
-      const response = await apiClient.get<ModelInfo[]>('/v1/query/models');
+      const response = await client.get('/v1/query/models');
+      const data = response.data as ModelInfo[];
+      
       // 为每个模型添加唯一ID（基于brand和name，确保稳定性）
-      return response.data.map((model) => ({
+      return data.map((model) => ({
         ...model,
         id: `${model.brand.toLowerCase().replace(/\s+/g, '-')}-${model.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')}`,
       }));
-    } catch (error: any) {
+    } catch (error) {
       console.error('获取模型列表失败:', error);
       throw error;
     }
@@ -40,12 +46,14 @@ export class ModelsApi {
   // 根据品牌获取模型列表 (根据API规范: GET /v1/query/models/brand/{brand_name})
   static async getModelsByBrand(brandName: string): Promise<Model[]> {
     try {
-      const response = await apiClient.get<ModelInfo[]>(`/v1/query/models/brand/${encodeURIComponent(brandName)}`);
-      return response.data.map((model) => ({
+      const response = await client.get(`/v1/query/models/brand/${encodeURIComponent(brandName)}`);
+      const data = response.data as ModelInfo[];
+      
+      return data.map((model) => ({
         ...model,
         id: `${model.brand.toLowerCase().replace(/\s+/g, '-')}-${model.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')}`,
       }));
-    } catch (error: any) {
+    } catch (error) {
       console.error(`获取品牌 ${brandName} 的模型列表失败:`, error);
       throw error;
     }
@@ -54,9 +62,10 @@ export class ModelsApi {
   // 获取可用品牌列表 (根据API规范: GET /v1/query/models/brands)
   static async getAvailableBrands(): Promise<string[]> {
     try {
-      const response = await apiClient.get<BrandsResponse>('/v1/query/models/brands');
-      return response.data.brands;
-    } catch (error: any) {
+      const response = await client.get('/v1/query/models/brands');
+      const data = response.data as BrandsResponse;
+      return data.brands;
+    } catch (error) {
       console.error('获取品牌列表失败:', error);
       // 如果API调用失败，回退到从模型列表中提取品牌
       return this.getBrands();
@@ -156,7 +165,7 @@ export class ModelsApi {
       const models = await this.getModels();
       const brands = [...new Set(models.map(model => model.brand))];
       return brands.sort();
-    } catch (error: any) {
+    } catch (error) {
       console.error('从模型数据提取品牌列表失败:', error);
       return [];
     }
@@ -200,9 +209,9 @@ export class ModelsApi {
   // 获取所有提供商信息 (根据API规范: GET /v1/providers)
   static async getAllProviders(): Promise<ProviderInfo[]> {
     try {
-      const response = await apiClient.get<ProviderInfo[]>('/v1/providers');
-      return response.data;
-    } catch (error: any) {
+      const response = await client.get('/v1/providers');
+      return response.data as ProviderInfo[];
+    } catch (error) {
       console.error('获取提供商列表失败:', error);
       throw error;
     }
@@ -211,9 +220,9 @@ export class ModelsApi {
   // 获取指定提供商信息 (根据API规范: GET /v1/providers/{provider_name})
   static async getProviderByName(providerName: string): Promise<ProviderInfo> {
     try {
-      const response = await apiClient.get<ProviderInfo>(`/v1/providers/${encodeURIComponent(providerName)}`);
-      return response.data;
-    } catch (error: any) {
+      const response = await client.get(`/v1/providers/${encodeURIComponent(providerName)}`);
+      return response.data as ProviderInfo;
+    } catch (error) {
       console.error(`获取提供商 ${providerName} 信息失败:`, error);
       throw error;
     }
@@ -222,12 +231,14 @@ export class ModelsApi {
   // 获取指定提供商的模型列表 (根据API规范: GET /v1/providers/{provider_name}/models)
   static async getModelsByProvider(providerName: string): Promise<Model[]> {
     try {
-      const response = await apiClient.get<ModelInfo[]>(`/v1/providers/${encodeURIComponent(providerName)}/models`);
-      return response.data.map((model) => ({
+      const response = await client.get(`/v1/providers/${encodeURIComponent(providerName)}/models`);
+      const data = response.data as ModelInfo[];
+      
+      return data.map((model) => ({
         ...model,
         id: `${model.brand.toLowerCase().replace(/\s+/g, '-')}-${model.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')}`,
       }));
-    } catch (error: any) {
+    } catch (error) {
       console.error(`获取提供商 ${providerName} 的模型列表失败:`, error);
       throw error;
     }
@@ -236,11 +247,22 @@ export class ModelsApi {
   // 获取支持指定模型的提供商列表 (根据API规范: GET /v1/models/{model_name}/providers)
   static async getProvidersForModel(modelName: string): Promise<ProviderInfo[]> {
     try {
-      const response = await apiClient.get<ProviderInfo[]>(`/v1/models/${encodeURIComponent(modelName)}/providers`);
-      return response.data;
-    } catch (error: any) {
+      const response = await client.get(`/v1/models/${encodeURIComponent(modelName)}/providers`);
+      return response.data as ProviderInfo[];
+    } catch (error) {
       console.error(`获取模型 ${modelName} 的提供商列表失败:`, error);
       throw error;
     }
+  }
+
+  // API健康检查
+  static async checkHealth(): Promise<boolean> {
+    return await checkApiHealth();
+  }
+
+  // 获取API状态信息
+  static getApiStatus() {
+    const { getApiInfo } = require('./client');
+    return getApiInfo();
   }
 }

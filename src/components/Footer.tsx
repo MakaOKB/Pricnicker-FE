@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import ApiStatus from './ApiStatus';
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
@@ -95,9 +96,12 @@ const Footer: React.FC = () => {
         {/* Bottom Section */}
         <div className="mt-8 pt-8 border-t border-neutral-300">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-text-muted text-sm">
-              &copy; {currentYear} 天津静海汇智卓创文化发展有限公司. 保留所有权利。
-            </p>
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
+              <p className="text-text-muted text-sm">
+                &copy; {currentYear} 天津静海汇智卓创文化发展有限公司. 保留所有权利。
+              </p>
+              <ApiStatus showDetails={true} />
+            </div>
             <div className="mt-4 md:mt-0">
               <p className="text-text-muted text-xs">
                 数据更新时间：{new Date().toLocaleString('zh-CN')}

@@ -36,7 +36,29 @@
 - npm run type-check：TypeScript 检查（不输出文件）
 
 ## 环境变量
-- VITE_API_BASE_URL：后端 API 根地址（默认 http://127.0.0.1:8000）。
+
+### 开发环境
+- VITE_API_BASE_URL：后端 API 根地址（默认 http://127.0.0.1:8000）
+
+### 生产环境
+项目已配置生产环境API端点，支持以下环境变量：
+
+- **VITE_API_BASE_URL**：生产环境API根地址（https://api.pc.msaos.tech）
+- **VITE_API_TIMEOUT**：API请求超时时间（默认30000ms）
+- **VITE_API_RETRY_ATTEMPTS**：API请求重试次数（默认3次）
+- **VITE_API_RETRY_DELAY**：重试延迟时间（默认1000ms）
+- **VITE_USE_API_RETRY**：是否启用API重试机制（生产环境默认启用）
+
+### 环境配置文件
+- `.env.production`：生产环境配置
+- 生产构建时会自动使用生产环境配置
+
+### 安全特性
+- 自动重试机制：网络错误和5xx服务器错误时自动重试
+- 指数退避策略：重试间隔递增，避免服务器压力
+- 详细错误处理：针对不同HTTP状态码提供具体错误信息
+- 请求/响应日志：便于调试和监控
+- 安全头设置：包含必要的安全HTTP头
 
 ## API 概览（示例）
 - GET /v1/query/models：获取模型列表（包含品牌、名称、窗口、提供商及其输入/输出价格）。
