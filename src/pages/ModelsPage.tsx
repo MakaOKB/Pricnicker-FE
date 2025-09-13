@@ -5,17 +5,23 @@ import { Model, FilterOptions } from '../types';
 import { useAppStore } from '../store';
 import { 
   MagnifyingGlassIcon, 
+  FunnelIcon, 
+  ChevronDownIcon,
+  XMarkIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
   SparklesIcon,
   CurrencyDollarIcon,
   ChartBarIcon,
   CpuChipIcon,
-  FireIcon
+  FireIcon,
+  GiftIcon
 } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
 import { formatPrice, formatWindow, formatNumber } from '../lib/utils';
 
 // 分类定义
-type CategoryType = 'recommended' | 'economic' | 'standard' | 'premium' | 'text' | 'code' | 'multimodal' | 'chat';
+type CategoryType = 'recommended' | 'free' | 'economic' | 'standard' | 'premium' | 'text' | 'code' | 'multimodal' | 'chat';
 
 interface Category {
   id: CategoryType;
@@ -27,7 +33,9 @@ interface Category {
 
 const ModelsPage: React.FC = () => {
   const { searchQuery, setSearchQuery } = useAppStore();
+  const [showFilters, setShowFilters] = useState(false);
   const [activeCategory, setActiveCategory] = useState<CategoryType>('recommended');
+  const [filters, setFilters] = useState<FilterOptions>({});
 
   // 获取模型数据
   const { data: models = [], isLoading, error } = useQuery({
@@ -36,21 +44,60 @@ const ModelsPage: React.FC = () => {
     staleTime: 5 * 60 * 1000, // 5分钟缓存
   });
 
+  // 从模型数据中提取品牌和提供商列表
+  const brands = React.useMemo(() => {
+    const uniqueBrands = [...new Set(models.map(model => model.brand))];
+    return uniqueBrands.sort();
+  }, [models]);
+
+  const providers = React.useMemo(() => {
+    const allProviders = models.flatMap(model => model.providers || []);
+    const uniqueProviders = allProviders.reduce((acc, provider) => {
+      if (!acc.find(p => p.name === provider.name)) {
+        acc.push({
+          name: provider.name,
+          display_name: provider.display_name || provider.name
+        });
+      }
+      return acc;
+    }, [] as { name: string; display_name: string }[]);
+    return uniqueProviders.sort((a, b) => a.display_name.localeCompare(b.display_name));
+  }, [models]);
+
   // 定义分类
   const categories: Category[] = [
     {
       id: 'recommended',
-      name: '推荐',
+      name: '所有',
       icon: SparklesIcon,
-      description: '综合性价比推荐',
+      description: '显示所有可用模型',
       filter: (models) => {
-        // 按性价比排序（价格低、窗口大的优先）
-        return models.sort((a, b) => {
-          const aPrice = a.providers?.length ? Math.min(...a.providers.map(p => p.tokens.input)) : Infinity;
-          const bPrice = b.providers?.length ? Math.min(...b.providers.map(p => p.tokens.input)) : Infinity;
-          const aRatio = a.window / (aPrice || 1);
-          const bRatio = b.window / (bPrice || 1);
-          return bRatio - aRatio;
+        // 按名称排序显示所有模型
+        return models.sort((a, b) => a.name.localeCompare(b.name));
+      }
+    },
+    {
+      id: 'free',
+      name: '免费模型',
+      icon: GiftIcon,
+      description: '完全免费使用的AI模型',
+      filter: (models) => {
+        return models.filter(model => {
+          if (!model.providers?.length) return false;
+          
+          const prices = model.providers.map(p => {
+            const inputPrice = p.tokens?.input;
+            if (inputPrice === undefined || inputPrice === null) {
+              return Infinity;
+            }
+            return Number(inputPrice);
+          });
+          
+          const minPrice = Math.min(...prices);
+          return minPrice <= 0.001; // ≤0.001元视为免费
+        }).sort((a, b) => {
+          // 按窗口大小排序，窗口大的优先
+          return b.window - a.window;
         });
       }
     },
@@ -62,8 +109,18 @@ const ModelsPage: React.FC = () => {
       filter: (models) => {
         return models.filter(model => {
           if (!model.providers?.length) return false;
-          const minPrice = Math.min(...model.providers.map(p => p.tokens.input));
-          return minPrice <= 3; // 3元以下为经济型
+          
+          const prices = model.providers.map(p => {
+            const inputPrice = p.tokens?.input;
+            if (inputPrice === undefined || inputPrice === null) {
+              return Infinity;
+            }
+            return Number(inputPrice);
+          });
+          
+          const minPrice = Math.min(...prices);
+          // 使用更严格的条件：价格必须 >= 0.01 且 <= 1元
+          return minPrice >= 0.01 && minPrice <= 1;
         }).sort((a, b) => {
           const aPrice = Math.min(...a.providers!.map(p => p.tokens.input));
           const bPrice = Math.min(...b.providers!.map(p => p.tokens.input));
@@ -79,8 +136,17 @@ const ModelsPage: React.FC = () => {
       filter: (models) => {
         return models.filter(model => {
           if (!model.providers?.length) return false;
-          const minPrice = Math.min(...model.providers.map(p => p.tokens.input));
-          return minPrice > 3 && minPrice <= 10; // 3-10元为标准型
+          
+          const prices = model.providers.map(p => {
+            const inputPrice = p.tokens?.input;
+            if (inputPrice === undefined || inputPrice === null) {
+              return Infinity;
+            }
+            return Number(inputPrice);
+          });
+          
+          const minPrice = Math.min(...prices);
+          return minPrice > 1 && minPrice <= 10; // 1 < 价格 ≤ 10元为标准型
         }).sort((a, b) => {
           const aPrice = Math.min(...a.providers!.map(p => p.tokens.input));
           const bPrice = Math.min(...b.providers!.map(p => p.tokens.input));
@@ -96,8 +162,17 @@ const ModelsPage: React.FC = () => {
       filter: (models) => {
         return models.filter(model => {
           if (!model.providers?.length) return false;
-          const minPrice = Math.min(...model.providers.map(p => p.tokens.input));
-          return minPrice > 10; // 10元以上为高端型
+          
+          const prices = model.providers.map(p => {
+            const inputPrice = p.tokens?.input;
+            if (inputPrice === undefined || inputPrice === null) {
+              return Infinity;
+            }
+            return Number(inputPrice);
+          });
+          
+          const minPrice = Math.min(...prices);
+          return minPrice > 10; // > 10元为高端型
         }).sort((a, b) => {
           const aPrice = Math.min(...a.providers!.map(p => p.tokens.input));
           const bPrice = Math.min(...b.providers!.map(p => p.tokens.input));
@@ -124,11 +199,14 @@ const ModelsPage: React.FC = () => {
   // 获取当前分类的模型
   const currentCategory = categories.find(cat => cat.id === activeCategory) || categories[0];
   
-  // 过滤和搜索模型
+  // 应用分类、筛选和搜索的模型过滤
   const filteredModels = React.useMemo(() => {
     let result = [...models];
 
-    // 搜索过滤
+    // 1. 首先应用分类过滤
+    result = currentCategory.filter(result);
+
+    // 2. 然后在分类结果基础上应用搜索过滤
     if (searchQuery) {
       result = result.filter(model => 
         model.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -136,11 +214,47 @@ const ModelsPage: React.FC = () => {
       );
     }
 
-    // 应用分类过滤
-    result = currentCategory.filter(result);
+    // 3. 在分类和搜索结果基础上应用品牌筛选
+    if (filters.brands && filters.brands.length > 0) {
+      result = result.filter(model => filters.brands!.includes(model.brand));
+    }
+
+    // 4. 在前面结果基础上应用提供商筛选
+    if (filters.providers && filters.providers.length > 0) {
+      result = result.filter(model => {
+        if (!model.providers || model.providers.length === 0) return false;
+        return model.providers.some(provider => filters.providers!.includes(provider.name));
+      });
+    }
+
+    // 应用排序
+    if (filters.sortBy) {
+      result.sort((a, b) => {
+        let aValue: any, bValue: any;
+        
+        switch (filters.sortBy) {
+          case 'price':
+            aValue = a.providers && a.providers.length > 0 ? Math.min(...a.providers.map(p => p.tokens.input)) : 0;
+            bValue = b.providers && b.providers.length > 0 ? Math.min(...b.providers.map(p => p.tokens.input)) : 0;
+            break;
+          case 'window':
+            aValue = a.window;
+            bValue = b.window;
+            break;
+          default:
+            return 0;
+        }
+
+        if (filters.sortOrder === 'desc') {
+          return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
+        } else {
+          return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+        }
+      });
+    }
 
     return result;
-  }, [models, searchQuery, currentCategory]);
+  }, [models, searchQuery, currentCategory, filters]);
 
   // 计算筛选结果中的唯一品牌数量
   const filteredBrandsCount = React.useMemo(() => {
@@ -244,9 +358,9 @@ const ModelsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 搜索栏 */}
-        <div className="mb-6">
-          <div className="relative max-w-md">
+        {/* 搜索和筛选栏 */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 relative">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-text-muted" />
             <input
               type="text"
@@ -266,7 +380,154 @@ const ModelsPage: React.FC = () => {
               </button>
             )}
           </div>
+          
+          {/* 筛选按钮 */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-colors font-medium ${
+              showFilters || Object.keys(filters).length > 0
+                ? 'bg-primary-600 text-white'
+                : 'bg-background-secondary border border-neutral-300 text-text-primary hover:bg-background-tertiary'
+            }`}
+          >
+            <FunnelIcon className="h-5 w-5" />
+            筛选
+            {Object.keys(filters).length > 0 && (
+              <span className="bg-white text-primary-600 text-xs px-2 py-1 rounded-full font-semibold">
+                {Object.keys(filters).length}
+              </span>
+            )}
+            <ChevronDownIcon className={`h-4 w-4 transition-transform ${
+              showFilters ? 'rotate-180' : ''
+            }`} />
+          </button>
         </div>
+
+        {/* 筛选面板 */}
+        {showFilters && (
+          <div className="mb-6 bg-background-secondary border border-neutral-300 rounded-lg p-6 shadow-soft">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* 品牌筛选 */}
+              <div>
+                <h4 className="text-sm font-semibold text-text-primary mb-3 flex items-center">
+                  <div className="w-1 h-4 bg-primary-600 rounded-full mr-2"></div>
+                  品牌筛选
+                </h4>
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {brands.map(brand => (
+                    <label key={brand} className="flex items-center hover:bg-background-tertiary p-1 rounded">
+                      <input
+                        type="checkbox"
+                        checked={filters.brands?.includes(brand) || false}
+                        onChange={(e) => {
+                          const currentBrands = filters.brands || [];
+                          if (e.target.checked) {
+                            setFilters({
+                              ...filters,
+                              brands: [...currentBrands, brand]
+                            });
+                          } else {
+                            setFilters({
+                              ...filters,
+                              brands: currentBrands.filter(b => b !== brand)
+                            });
+                          }
+                        }}
+                        className="mr-2 rounded border-neutral-300 text-primary-600 focus:ring-primary-600"
+                      />
+                      <span className="text-sm text-text-secondary">{brand}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* 提供商筛选 */}
+              <div>
+                <h4 className="text-sm font-semibold text-text-primary mb-3 flex items-center">
+                  <div className="w-1 h-4 bg-secondary-600 rounded-full mr-2"></div>
+                  提供商筛选
+                </h4>
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {providers.map(provider => (
+                    <label key={provider.name} className="flex items-center hover:bg-background-tertiary p-1 rounded">
+                      <input
+                        type="checkbox"
+                        checked={filters.providers?.includes(provider.name) || false}
+                        onChange={(e) => {
+                          const currentProviders = filters.providers || [];
+                          if (e.target.checked) {
+                            setFilters({
+                              ...filters,
+                              providers: [...currentProviders, provider.name]
+                            });
+                          } else {
+                            setFilters({
+                              ...filters,
+                              providers: currentProviders.filter(p => p !== provider.name)
+                            });
+                          }
+                        }}
+                        className="mr-2 rounded border-neutral-300 text-secondary-600 focus:ring-secondary-600"
+                      />
+                      <span className="text-sm text-text-secondary">{provider.display_name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* 排序选项 */}
+              <div>
+                <h4 className="text-sm font-semibold text-text-primary mb-3 flex items-center">
+                  <div className="w-1 h-4 bg-green-600 rounded-full mr-2"></div>
+                  排序方式
+                </h4>
+                <select
+                  value={`${filters.sortBy || ''}-${filters.sortOrder || 'asc'}`}
+                  onChange={(e) => {
+                    const [sortBy, sortOrder] = e.target.value.split('-');
+                    setFilters({
+                      ...filters,
+                      sortBy: sortBy as FilterOptions['sortBy'],
+                      sortOrder: sortOrder as FilterOptions['sortOrder']
+                    });
+                  }}
+                  className="w-full px-3 py-2 bg-background-primary border border-neutral-300 rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-600"
+                >
+                  <option value="-asc">默认排序</option>
+                  <option value="price-asc">价格：低到高</option>
+                  <option value="price-desc">价格：高到低</option>
+                  <option value="window-asc">窗口：小到大</option>
+                  <option value="window-desc">窗口：大到小</option>
+                </select>
+              </div>
+            </div>
+            
+            {/* 筛选操作按钮 */}
+            <div className="mt-6 flex items-center justify-between">
+              <div className="text-sm text-text-muted">
+                {Object.keys(filters).length > 0 && (
+                  <span>已选择 {Object.keys(filters).length} 个筛选条件</span>
+                )}
+              </div>
+              <div className="flex gap-3">
+                {Object.keys(filters).length > 0 && (
+                  <button
+                    onClick={() => setFilters({})}
+                    className="px-4 py-2 text-text-secondary hover:text-text-primary transition-colors text-sm font-medium"
+                  >
+                    清除筛选
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
+                >
+                  完成
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
 
 
@@ -318,7 +579,7 @@ const ModelsPage: React.FC = () => {
                   onClick={() => setActiveCategory('recommended')}
                   className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
                 >
-                  查看推荐模型
+                  查看所有模型
                 </button>
               </div>
             </div>
