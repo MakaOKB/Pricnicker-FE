@@ -7,10 +7,10 @@ export class ModelsApi {
   static async getModels(): Promise<Model[]> {
     try {
       const response = await apiClient.get<ModelInfo[]>('/v1/query/models');
-      // 为每个模型添加唯一ID（基于brand和name）
-      return response.data.map((model, index) => ({
+      // 为每个模型添加唯一ID（基于brand和name，确保稳定性）
+      return response.data.map((model) => ({
         ...model,
-        id: `${model.brand.toLowerCase().replace(/\s+/g, '-')}-${model.name.toLowerCase().replace(/\s+/g, '-')}-${index}`,
+        id: `${model.brand.toLowerCase().replace(/\s+/g, '-')}-${model.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')}`,
       }));
     } catch (error: any) {
       console.error('获取模型列表失败:', error);
@@ -22,9 +22,9 @@ export class ModelsApi {
   static async getModelsByBrand(brandName: string): Promise<Model[]> {
     try {
       const response = await apiClient.get<ModelInfo[]>(`/v1/query/models/brand/${encodeURIComponent(brandName)}`);
-      return response.data.map((model, index) => ({
+      return response.data.map((model) => ({
         ...model,
-        id: `${model.brand.toLowerCase().replace(/\s+/g, '-')}-${model.name.toLowerCase().replace(/\s+/g, '-')}-${index}`,
+        id: `${model.brand.toLowerCase().replace(/\s+/g, '-')}-${model.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')}`,
       }));
     } catch (error: any) {
       console.error(`获取品牌 ${brandName} 的模型列表失败:`, error);
@@ -197,9 +197,9 @@ export class ModelsApi {
   static async getModelsByProvider(providerName: string): Promise<Model[]> {
     try {
       const response = await apiClient.get<ModelInfo[]>(`/v1/providers/${encodeURIComponent(providerName)}/models`);
-      return response.data.map((model, index) => ({
+      return response.data.map((model) => ({
         ...model,
-        id: `${model.brand.toLowerCase().replace(/\s+/g, '-')}-${model.name.toLowerCase().replace(/\s+/g, '-')}-${index}`,
+        id: `${model.brand.toLowerCase().replace(/\s+/g, '-')}-${model.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')}`,
       }));
     } catch (error: any) {
       console.error(`获取提供商 ${providerName} 的模型列表失败:`, error);

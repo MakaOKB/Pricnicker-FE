@@ -12,12 +12,8 @@ export interface ModelTokens extends TokenInfo {}
 export interface ProviderInfo {
   name: string;
   display_name: string;
-  api_endpoint: string;
-  reliability_score: number;
-  response_time_ms: number;
-  uptime_percentage: number;
-  region: string;
-  support_streaming: boolean;
+  api_website: string;
+  tokens: TokenInfo;
 }
 
 // AI模型信息接口 (根据API规范)
@@ -26,9 +22,8 @@ export interface ModelInfo {
   name: string;
   data_amount: number | null;
   window: number;
-  tokens: TokenInfo;
+  tokens?: TokenInfo; // 可选，具体价格请参考providers中的价格
   providers: ProviderInfo[];
-  recommended_provider?: string | null;
 }
 
 // 扩展的模型接口，包含前端需要的额外字段

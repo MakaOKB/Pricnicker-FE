@@ -73,44 +73,37 @@ const ModelCard: React.FC<ModelCardProps> = ({ model, onAddToCompare, isInCompar
         </div>
 
         {/* Pricing */}
-        <div className="bg-gradient-to-r from-secondary-100 to-secondary-200 rounded-xl p-4 mb-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center">
-              <div className="text-lg font-bold text-text-primary">
-                {formatPrice(model.tokens.input, model.tokens.unit)}
+        {model.tokens && (
+          <div className="bg-gradient-to-r from-secondary-100 to-secondary-200 rounded-xl p-4 mb-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <div className="text-lg font-bold text-text-primary">
+                  {formatPrice(model.tokens.input, model.tokens.unit)}
+                </div>
+                <div className="text-xs text-text-secondary">输入/千tokens</div>
               </div>
-              <div className="text-xs text-text-secondary">输入/千tokens</div>
-            </div>
-            <div className="text-center">
-              <div className="text-lg font-bold text-text-primary">
-                {formatPrice(model.tokens.output, model.tokens.unit)}
+              <div className="text-center">
+                <div className="text-lg font-bold text-text-primary">
+                  {formatPrice(model.tokens.output, model.tokens.unit)}
+                </div>
+                <div className="text-xs text-text-secondary">输出/千tokens</div>
               </div>
-              <div className="text-xs text-text-secondary">输出/千tokens</div>
             </div>
           </div>
-        </div>
+        )}
         
-        {/* 推荐提供商信息 */}
-        {model.recommended_provider && model.providers && (
-          <div className="mb-4 p-3 bg-orange-primary/10 border border-orange-primary/20 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
+        {/* 提供商数量信息 */}
+        {model.providers && model.providers.length > 0 && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-orange-primary rounded-full"></div>
-                <span className="text-text-secondary text-xs">推荐提供商</span>
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-text-secondary text-xs">可用提供商</span>
               </div>
-              <span className="text-orange-primary text-xs font-medium">
-                {model.providers.find(p => p.name === model.recommended_provider)?.display_name || model.recommended_provider}
+              <span className="text-blue-600 text-xs font-medium">
+                {model.providers.length} 个提供商
               </span>
             </div>
-            {(() => {
-              const provider = model.providers.find(p => p.name === model.recommended_provider);
-              return provider && (
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-text-muted">可靠性 {provider.reliability_score.toFixed(1)}/10</span>
-                  <span className="text-text-muted">{provider.response_time_ms}ms</span>
-                </div>
-              );
-            })()}
           </div>
         )}
 

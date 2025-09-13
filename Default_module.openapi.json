@@ -56,11 +56,7 @@
                       "name": "DeepSeek-V3.1",
                       "data_amount": 671,
                       "window": 160000,
-                      "tokens": {
-                        "input": 4,
-                        "output": 12,
-                        "unit": "CNY"
-                      },
+
                       "providers": [
                         {
                           "name": "deepseek",
@@ -94,11 +90,7 @@
                       "name": "Claude-4-Sonnet",
                       "data_amount": null,
                       "window": 200000,
-                      "tokens": {
-                        "input": 3,
-                        "output": 15,
-                        "unit": "USD"
-                      },
+
                       "providers": [
                         {
                           "name": "anthropic",
@@ -184,11 +176,18 @@
                   "name": "DeepSeek-V3.1",
                   "data_amount": 671,
                   "window": 160000,
-                  "tokens": {
-                    "input": 4,
-                    "output": 12,
-                    "unit": "CNY"
-                  }
+                  "providers": [
+                    {
+                      "name": "deepseek",
+                      "display_name": "DeepSeek官方",
+                      "api_website": "https://www.deepseek.com",
+                      "tokens": {
+                        "input": 4,
+                        "output": 12,
+                        "unit": "CNY"
+                      }
+                    }
+                  ]
                 }
               }
             },
@@ -555,10 +554,7 @@
             "description": "上下文窗口大小",
             "example": 160000
           },
-          "tokens": {
-            "$ref": "#/components/schemas/TokenInfo",
-            "description": "模型的基础价格信息（可选，具体价格请参考providers中的价格）"
-          },
+
           "providers": {
             "type": "array",
             "items": {

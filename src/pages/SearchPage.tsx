@@ -139,10 +139,10 @@ const SearchPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-dark-primary py-8">
+      <div className="min-h-screen bg-background-primary py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-primary"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
             <span className="ml-4 text-text-primary">搜索中...</span>
           </div>
         </div>
@@ -152,14 +152,14 @@ const SearchPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-dark-primary py-8">
+      <div className="min-h-screen bg-background-primary py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-text-primary mb-4">搜索失败</h1>
             <p className="text-text-secondary mb-4">无法获取搜索结果，请稍后重试</p>
             <button 
               onClick={() => window.location.reload()}
-              className="bg-orange-primary text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+              className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
             >
               重新加载
             </button>
@@ -170,7 +170,7 @@ const SearchPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-dark-primary py-8">
+    <div className="min-h-screen bg-background-primary py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* 页面标题 */}
         <div className="mb-8">
@@ -182,7 +182,7 @@ const SearchPage: React.FC = () => {
               <span>关键词: "{query}"</span>
             )}
             {brand && (
-              <span className="bg-orange-primary/20 text-orange-primary px-2 py-1 rounded-full text-sm">
+              <span className="bg-primary-600/20 text-primary-600 px-2 py-1 rounded-full text-sm">
                 品牌: {brand}
               </span>
             )}
@@ -200,12 +200,12 @@ const SearchPage: React.FC = () => {
                 placeholder="搜索模型或品牌..."
                 value={localQuery}
                 onChange={(e) => setLocalQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-dark-secondary border border-dark-border rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-orange-primary focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 bg-background-secondary border border-neutral-300 rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary-600 focus:border-transparent"
               />
             </div>
             <button
               type="submit"
-              className="px-6 py-2 bg-orange-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
+              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
             >
               搜索
             </button>
@@ -213,7 +213,7 @@ const SearchPage: React.FC = () => {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="flex items-center gap-2 px-4 py-2 bg-dark-secondary border border-dark-border rounded-lg text-text-primary hover:bg-dark-tertiary transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-background-secondary border border-neutral-300 rounded-lg text-text-primary hover:bg-background-tertiary transition-colors"
               >
                 <XMarkIcon className="h-4 w-4" />
                 清除
@@ -233,8 +233,8 @@ const SearchPage: React.FC = () => {
               onClick={() => handleBrandFilter('')}
               className={`px-3 py-1 rounded-full text-sm transition-colors ${
                 !brand
-                  ? 'bg-orange-primary text-white'
-                  : 'bg-dark-secondary text-text-secondary hover:bg-dark-tertiary'
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-background-secondary text-text-secondary hover:bg-background-tertiary'
               }`}
             >
               全部
@@ -245,8 +245,8 @@ const SearchPage: React.FC = () => {
                 onClick={() => handleBrandFilter(brandName)}
                 className={`px-3 py-1 rounded-full text-sm transition-colors ${
                   brand === brandName
-                    ? 'bg-orange-primary text-white'
-                    : 'bg-dark-secondary text-text-secondary hover:bg-dark-tertiary'
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-background-secondary text-text-secondary hover:bg-background-tertiary'
                 }`}
               >
                 {brandName}
@@ -264,8 +264,8 @@ const SearchPage: React.FC = () => {
                 onClick={() => toggleSort(sortKey as FilterOptions['sortBy'])}
                 className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-colors ${
                   sortBy === sortKey
-                    ? 'bg-orange-primary text-white'
-                    : 'bg-dark-secondary text-text-secondary hover:bg-dark-tertiary'
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-background-secondary text-text-secondary hover:bg-background-tertiary'
                 }`}
               >
                 {sortKey === 'price' && '价格'}
@@ -292,7 +292,7 @@ const SearchPage: React.FC = () => {
             </p>
             <Link
               to="/models"
-              className="inline-block bg-orange-primary text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+              className="inline-block bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors"
             >
               浏览所有模型
             </Link>
@@ -336,7 +336,7 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
     const parts = text.split(regex);
     return parts.map((part, index) => 
       regex.test(part) ? (
-        <mark key={index} className="bg-orange-primary/30 text-orange-primary px-1 rounded">
+        <mark key={index} className="bg-primary-600/30 text-primary-600 px-1 rounded">
           {part}
         </mark>
       ) : part
@@ -344,10 +344,10 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
   };
 
   return (
-    <div className="bg-dark-secondary border border-dark-border rounded-lg p-6 hover:border-orange-primary transition-colors">
+    <div className="bg-background-secondary border border-neutral-300 rounded-lg p-6 hover:border-primary-600 transition-colors">
       {/* 品牌标签 */}
       <div className="flex items-center justify-between mb-3">
-        <span className="inline-block px-2 py-1 bg-orange-primary/20 text-orange-primary text-xs font-medium rounded-full">
+        <span className="inline-block px-2 py-1 bg-primary-600/20 text-primary-600 text-xs font-medium rounded-full">
           {highlightText(model.brand, searchQuery)}
         </span>
         <button
@@ -356,7 +356,7 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
           className={`text-xs px-2 py-1 rounded transition-colors ${
             isInCompare 
               ? 'bg-green-500/20 text-green-400 cursor-not-allowed'
-              : 'bg-dark-tertiary text-text-secondary hover:bg-orange-primary hover:text-white'
+              : 'bg-background-tertiary text-text-secondary hover:bg-primary-600 hover:text-white'
           }`}
         >
           {isInCompare ? '已添加' : '对比'}
@@ -370,18 +370,22 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
 
       {/* 价格信息 */}
       <div className="space-y-2 mb-4">
-        <div className="flex justify-between items-center">
-          <span className="text-text-secondary text-sm">输入价格</span>
-          <span className="text-text-primary font-medium">
-            {model.tokens.input} {model.tokens.unit}/1K tokens
-          </span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-text-secondary text-sm">输出价格</span>
-          <span className="text-text-primary font-medium">
-            {model.tokens.output} {model.tokens.unit}/1K tokens
-          </span>
-        </div>
+        {model.tokens && (
+          <>
+            <div className="flex justify-between items-center">
+              <span className="text-text-secondary text-sm">输入价格</span>
+              <span className="text-text-primary font-medium">
+                {model.tokens.input} {model.tokens.unit}/1K tokens
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-text-secondary text-sm">输出价格</span>
+              <span className="text-text-primary font-medium">
+                {model.tokens.output} {model.tokens.unit}/1K tokens
+              </span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* 技术参数 */}
@@ -402,27 +406,18 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
         )}
       </div>
       
-      {/* 推荐提供商信息 */}
-      {model.recommended_provider && model.providers && (
-        <div className="mb-4 p-3 bg-orange-primary/10 border border-orange-primary/20 rounded-lg">
+      {/* 提供商数量信息 */}
+      {model.providers && model.providers.length > 0 && (
+        <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-orange-primary rounded-full"></div>
-              <span className="text-text-secondary text-xs">推荐提供商</span>
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="text-text-secondary text-xs">可用提供商</span>
             </div>
-            <span className="text-orange-primary text-xs font-medium">
-              {model.providers.find(p => p.name === model.recommended_provider)?.display_name || model.recommended_provider}
+            <span className="text-blue-400 text-xs font-medium">
+              {model.providers.length} 个提供商
             </span>
           </div>
-          {(() => {
-            const provider = model.providers.find(p => p.name === model.recommended_provider);
-            return provider && (
-              <div className="mt-2 flex items-center justify-between text-xs">
-                <span className="text-text-muted">可靠性: {provider.reliability_score.toFixed(1)}/10</span>
-                <span className="text-text-muted">响应: {provider.response_time_ms}ms</span>
-              </div>
-            );
-          })()}
         </div>
       )}
 
@@ -430,7 +425,7 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
       <div className="flex gap-2">
         <Link
           to={`/models/${model.id}`}
-          className="flex-1 bg-orange-primary text-white text-center py-2 px-4 rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
+          className="flex-1 bg-primary-600 text-white text-center py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
         >
           查看详情
         </Link>

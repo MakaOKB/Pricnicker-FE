@@ -367,18 +367,22 @@ const ModelCard: React.FC<ModelCardProps> = ({ model, onAddToCompare, isInCompar
 
       {/* 价格信息 */}
       <div className="space-y-2 mb-4">
-        <div className="flex justify-between items-center">
-          <span className="text-text-secondary text-sm">输入价格</span>
-          <span className="text-text-primary font-medium">
-            {formatPrice(model.tokens.input, model.tokens.unit)}/1K tokens
-          </span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-text-secondary text-sm">输出价格</span>
-          <span className="text-text-primary font-medium">
-            {formatPrice(model.tokens.output, model.tokens.unit)}/1K tokens
-          </span>
-        </div>
+        {model.tokens && (
+          <>
+            <div className="flex justify-between items-center">
+              <span className="text-text-secondary text-sm">输入价格</span>
+              <span className="text-text-primary font-medium">
+                {formatPrice(model.tokens.input, model.tokens.unit)}/1K tokens
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-text-secondary text-sm">输出价格</span>
+              <span className="text-text-primary font-medium">
+                {formatPrice(model.tokens.output, model.tokens.unit)}/1K tokens
+              </span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* 技术参数 */}
@@ -399,27 +403,18 @@ const ModelCard: React.FC<ModelCardProps> = ({ model, onAddToCompare, isInCompar
         )}
       </div>
       
-      {/* 推荐提供商信息 */}
-      {model.recommended_provider && model.providers && (
-        <div className="mb-4 p-3 bg-orange-primary/10 border border-orange-primary/20 rounded-lg">
+      {/* 提供商数量信息 */}
+      {model.providers && model.providers.length > 0 && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-orange-primary rounded-full"></div>
-              <span className="text-text-secondary text-xs">推荐提供商</span>
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="text-text-secondary text-xs">可用提供商</span>
             </div>
-            <span className="text-orange-primary text-xs font-medium">
-              {model.providers.find(p => p.name === model.recommended_provider)?.display_name || model.recommended_provider}
+            <span className="text-blue-600 text-xs font-medium">
+              {model.providers.length} 个提供商
             </span>
           </div>
-          {(() => {
-            const provider = model.providers.find(p => p.name === model.recommended_provider);
-            return provider && (
-              <div className="mt-2 flex items-center justify-between text-xs">
-                <span className="text-text-muted">可靠性: {provider.reliability_score.toFixed(1)}/10</span>
-                <span className="text-text-muted">响应: {provider.response_time_ms}ms</span>
-              </div>
-            );
-          })()}
         </div>
       )}
 
@@ -427,7 +422,7 @@ const ModelCard: React.FC<ModelCardProps> = ({ model, onAddToCompare, isInCompar
       <div className="flex gap-2">
         <Link
           to={`/models/${model.id}`}
-          className="flex-1 bg-orange-primary text-white text-center py-2 px-4 rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
+          className="flex-1 bg-primary-600 text-white text-center py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
         >
           查看详情
         </Link>
