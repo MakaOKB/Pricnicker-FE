@@ -5,19 +5,29 @@ import { Model, FilterOptions } from '../types';
 import { useAppStore } from '../store';
 import { 
   MagnifyingGlassIcon, 
-  FunnelIcon, 
-  ChevronDownIcon,
-  XMarkIcon,
-  ArrowUpIcon,
-  ArrowDownIcon
+  SparklesIcon,
+  CurrencyDollarIcon,
+  ChartBarIcon,
+  CpuChipIcon,
+  FireIcon
 } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
 import { formatPrice, formatWindow, formatNumber } from '../lib/utils';
 
+// 分类定义
+type CategoryType = 'recommended' | 'economic' | 'standard' | 'premium' | 'text' | 'code' | 'multimodal' | 'chat';
+
+interface Category {
+  id: CategoryType;
+  name: string;
+  icon: React.ComponentType<any>;
+  description: string;
+  filter: (models: Model[]) => Model[];
+}
+
 const ModelsPage: React.FC = () => {
-  const { filters, setFilters, searchQuery, setSearchQuery, addToCompare, compareList } = useAppStore();
-  const [showFilters, setShowFilters] = useState(false);
-  const [localFilters, setLocalFilters] = useState<FilterOptions>(filters);
+  const { searchQuery, setSearchQuery } = useAppStore();
+  const [activeCategory, setActiveCategory] = useState<CategoryType>('recommended');
 
   // 获取模型数据
   const { data: models = [], isLoading, error } = useQuery({
@@ -26,13 +36,94 @@ const ModelsPage: React.FC = () => {
     staleTime: 5 * 60 * 1000, // 5分钟缓存
   });
 
-  // 获取品牌列表
-  const { data: brands = [] } = useQuery({
-    queryKey: ['brands'],
-    queryFn: ModelsApi.getAvailableBrands,
-    staleTime: 10 * 60 * 1000, // 10分钟缓存
-  });
+  // 定义分类
+  const categories: Category[] = [
+    {
+      id: 'recommended',
+      name: '推荐',
+      icon: SparklesIcon,
+      description: '综合性价比推荐',
+      filter: (models) => {
+        // 按性价比排序（价格低、窗口大的优先）
+        return models.sort((a, b) => {
+          const aPrice = a.providers?.length ? Math.min(...a.providers.map(p => p.tokens.input)) : Infinity;
+          const bPrice = b.providers?.length ? Math.min(...b.providers.map(p => p.tokens.input)) : Infinity;
+          const aRatio = a.window / (aPrice || 1);
+          const bRatio = b.window / (bPrice || 1);
+          return bRatio - aRatio;
+        });
+      }
+    },
+    {
+      id: 'economic',
+      name: '经济型',
+      icon: CurrencyDollarIcon,
+      description: '价格实惠的模型',
+      filter: (models) => {
+        return models.filter(model => {
+          if (!model.providers?.length) return false;
+          const minPrice = Math.min(...model.providers.map(p => p.tokens.input));
+          return minPrice <= 3; // 3元以下为经济型
+        }).sort((a, b) => {
+          const aPrice = Math.min(...a.providers!.map(p => p.tokens.input));
+          const bPrice = Math.min(...b.providers!.map(p => p.tokens.input));
+          return aPrice - bPrice;
+        });
+      }
+    },
+    {
+      id: 'standard',
+      name: '标准型',
+      icon: ChartBarIcon,
+      description: '性能均衡的模型',
+      filter: (models) => {
+        return models.filter(model => {
+          if (!model.providers?.length) return false;
+          const minPrice = Math.min(...model.providers.map(p => p.tokens.input));
+          return minPrice > 3 && minPrice <= 10; // 3-10元为标准型
+        }).sort((a, b) => {
+          const aPrice = Math.min(...a.providers!.map(p => p.tokens.input));
+          const bPrice = Math.min(...b.providers!.map(p => p.tokens.input));
+          return aPrice - bPrice;
+        });
+      }
+    },
+    {
+      id: 'premium',
+      name: '高端型',
+      icon: FireIcon,
+      description: '顶级性能模型',
+      filter: (models) => {
+        return models.filter(model => {
+          if (!model.providers?.length) return false;
+          const minPrice = Math.min(...model.providers.map(p => p.tokens.input));
+          return minPrice > 10; // 10元以上为高端型
+        }).sort((a, b) => {
+          const aPrice = Math.min(...a.providers!.map(p => p.tokens.input));
+          const bPrice = Math.min(...b.providers!.map(p => p.tokens.input));
+          return aPrice - bPrice;
+        });
+      }
+    },
+    {
+      id: 'text',
+      name: '文本生成',
+      icon: CpuChipIcon,
+      description: '专注文本处理',
+      filter: (models) => {
+        return models.filter(model => 
+          model.name.toLowerCase().includes('text') ||
+          model.name.toLowerCase().includes('gpt') ||
+          model.name.toLowerCase().includes('claude') ||
+          model.name.toLowerCase().includes('llama')
+        ).sort((a, b) => a.name.localeCompare(b.name));
+      }
+    }
+  ];
 
+  // 获取当前分类的模型
+  const currentCategory = categories.find(cat => cat.id === activeCategory) || categories[0];
+  
   // 过滤和搜索模型
   const filteredModels = React.useMemo(() => {
     let result = [...models];
@@ -45,57 +136,11 @@ const ModelsPage: React.FC = () => {
       );
     }
 
-    // 品牌过滤
-    if (filters.brands && filters.brands.length > 0) {
-      result = result.filter(model => filters.brands!.includes(model.brand));
-    }
-
-    // 价格范围过滤
-    if (filters.priceRange) {
-      const [min, max] = filters.priceRange;
-      result = result.filter(model => {
-        if (!model.providers || model.providers.length === 0) return false;
-        const minInputPrice = Math.min(...model.providers.map(p => p.tokens.input));
-        return minInputPrice >= min && minInputPrice <= max;
-      });
-    }
-
-    // 窗口大小过滤
-    if (filters.windowRange) {
-      const [min, max] = filters.windowRange;
-      result = result.filter(model => 
-        model.window >= min && model.window <= max
-      );
-    }
-
-    // 排序
-    if (filters.sortBy) {
-      result.sort((a, b) => {
-        let aValue: any, bValue: any;
-        
-        switch (filters.sortBy) {
-          case 'price':
-            aValue = a.providers && a.providers.length > 0 ? Math.min(...a.providers.map(p => p.tokens.input)) : 0;
-            bValue = b.providers && b.providers.length > 0 ? Math.min(...b.providers.map(p => p.tokens.input)) : 0;
-            break;
-          case 'window':
-            aValue = a.window;
-            bValue = b.window;
-            break;
-          default:
-            return 0;
-        }
-
-        if (filters.sortOrder === 'desc') {
-          return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
-        } else {
-          return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
-        }
-      });
-    }
+    // 应用分类过滤
+    result = currentCategory.filter(result);
 
     return result;
-  }, [models, searchQuery, filters]);
+  }, [models, searchQuery, currentCategory]);
 
   // 计算筛选结果中的唯一品牌数量
   const filteredBrandsCount = React.useMemo(() => {
@@ -103,28 +148,9 @@ const ModelsPage: React.FC = () => {
     return uniqueBrands.size;
   }, [filteredModels]);
 
-  // 应用筛选器
-  const applyFilters = () => {
-    setFilters(localFilters);
-    setShowFilters(false);
-  };
-
-  // 重置筛选器
-  const resetFilters = () => {
-    const emptyFilters: FilterOptions = {};
-    setLocalFilters(emptyFilters);
-    setFilters(emptyFilters);
+  // 重置搜索
+  const resetSearch = () => {
     setSearchQuery('');
-  };
-
-  // 切换排序
-  const toggleSort = (sortBy: FilterOptions['sortBy']) => {
-    const newFilters = {
-      ...filters,
-      sortBy,
-      sortOrder: filters.sortBy === sortBy && filters.sortOrder === 'asc' ? 'desc' : 'asc'
-    } as FilterOptions;
-    setFilters(newFilters);
   };
 
   if (isLoading) {
@@ -165,167 +191,150 @@ const ModelsPage: React.FC = () => {
         {/* 页面标题 */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-text-primary mb-2">
-            AI模型列表
+            AI模型智能分类
           </h1>
           <p className="text-text-secondary">
-            发现 {filteredModels.length} 个模型，来自 {filteredBrandsCount} 个品牌
+            通过智能分类快速找到适合的模型
           </p>
         </div>
 
-        {/* 搜索和筛选栏 */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
-          {/* 搜索框 */}
-          <div className="flex-1 relative">
+        {/* 分类导航 */}
+        <div className="mb-8">
+          <div className="flex flex-wrap gap-3 mb-6">
+            {categories.map((category) => {
+              const IconComponent = category.icon;
+              const isActive = activeCategory === category.id;
+              const categoryModels = category.filter(models);
+              
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => setActiveCategory(category.id)}
+                  className={`flex items-center gap-3 px-6 py-4 rounded-xl transition-all duration-200 ${
+                    isActive
+                      ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-medium transform -translate-y-1'
+                      : 'bg-background-secondary text-text-secondary hover:bg-background-tertiary hover:text-text-primary border border-neutral-300 hover:border-primary-300'
+                  }`}
+                >
+                  <IconComponent className={`h-5 w-5 ${
+                    isActive ? 'text-white' : 'text-primary-600'
+                  }`} />
+                  <div className="text-left">
+                    <div className="font-semibold text-sm">{category.name}</div>
+                    <div className={`text-xs ${
+                      isActive ? 'text-primary-100' : 'text-text-muted'
+                    }`}>
+                      {categoryModels.length} 个模型
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          
+          {/* 当前分类描述 */}
+          <div className="bg-gradient-to-r from-primary-50 to-primary-100 border border-primary-200 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <currentCategory.icon className="h-6 w-6 text-primary-600" />
+              <div>
+                <h3 className="font-semibold text-text-primary">{currentCategory.name}</h3>
+                <p className="text-sm text-text-secondary">{currentCategory.description}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 搜索栏 */}
+        <div className="mb-6">
+          <div className="relative max-w-md">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-text-muted" />
             <input
               type="text"
-              placeholder="搜索模型或品牌..."
+              placeholder="在当前分类中搜索..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-background-secondary border border-neutral-300 rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary-600 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-3 bg-background-secondary border border-neutral-300 rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary-600 focus:border-transparent"
             />
+            {searchQuery && (
+              <button
+                onClick={resetSearch}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-muted hover:text-text-secondary"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
-
-          {/* 筛选按钮 */}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 px-4 py-2 bg-background-secondary border border-neutral-300 rounded-lg text-text-primary hover:bg-background-tertiary transition-colors"
-          >
-            <FunnelIcon className="h-5 w-5" />
-            筛选
-            <ChevronDownIcon className={`h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-          </button>
-
-          {/* 重置按钮 */}
-          {(searchQuery || Object.keys(filters).length > 0) && (
-            <button
-              onClick={resetFilters}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              <XMarkIcon className="h-4 w-4" />
-              重置
-            </button>
-          )}
         </div>
 
-        {/* 筛选面板 */}
-        {showFilters && (
-          <div className="mb-6 p-4 bg-background-secondary border border-neutral-300 rounded-lg">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* 品牌筛选 */}
-              <div>
-                <label className="block text-sm font-medium text-text-primary mb-2">
-                  品牌
-                </label>
-                <div className="space-y-2 max-h-32 overflow-y-auto">
-                  {brands.map(brand => (
-                    <label key={brand} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={localFilters.brands?.includes(brand) || false}
-                        onChange={(e) => {
-                          const currentBrands = localFilters.brands || [];
-                          if (e.target.checked) {
-                            setLocalFilters({
-                              ...localFilters,
-                              brands: [...currentBrands, brand]
-                            });
-                          } else {
-                            setLocalFilters({
-                              ...localFilters,
-                              brands: currentBrands.filter(b => b !== brand)
-                            });
-                          }
-                        }}
-                        className="mr-2 rounded border-neutral-300 text-primary-600 focus:ring-primary-600"
-                      />
-                      <span className="text-sm text-text-secondary">{brand}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
 
-              {/* 排序选项 */}
-              <div>
-                <label className="block text-sm font-medium text-text-primary mb-2">
-                  排序方式
-                </label>
-                <select
-                  value={`${localFilters.sortBy || ''}-${localFilters.sortOrder || 'asc'}`}
-                  onChange={(e) => {
-                    const [sortBy, sortOrder] = e.target.value.split('-');
-                    setLocalFilters({
-                      ...localFilters,
-                      sortBy: sortBy as FilterOptions['sortBy'],
-                      sortOrder: sortOrder as FilterOptions['sortOrder']
-                    });
-                  }}
-                  className="w-full px-3 py-2 bg-background-primary border border-neutral-300 rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-600"
-                >
-                  <option value="-asc">默认排序</option>
-                  <option value="price-asc">价格：低到高</option>
-                  <option value="price-desc">价格：高到低</option>
-                  <option value="window-asc">窗口：小到大</option>
-                  <option value="window-desc">窗口：大到小</option>
-                </select>
-              </div>
-            </div>
 
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={applyFilters}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-              >
-                应用筛选
-              </button>
-              <button
-                onClick={() => setShowFilters(false)}
-                className="px-4 py-2 bg-background-tertiary text-text-secondary rounded-lg hover:bg-neutral-300 transition-colors"
-              >
-                取消
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* 排序标签 */}
-        <div className="mb-4 flex flex-wrap gap-2">
-          {['price', 'window'].map(sortKey => (
-            <button
-              key={sortKey}
-              onClick={() => toggleSort(sortKey as FilterOptions['sortBy'])}
-              className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-colors ${
-                filters.sortBy === sortKey
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-background-secondary text-text-secondary hover:bg-background-tertiary'
-              }`}
-            >
-              {sortKey === 'price' && '价格'}
-              {sortKey === 'window' && '窗口大小'}
-              {filters.sortBy === sortKey && (
-                filters.sortOrder === 'asc' ? 
-                  <ArrowUpIcon className="h-3 w-3" /> : 
-                  <ArrowDownIcon className="h-3 w-3" />
+        {/* 结果统计 */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between py-4 border-b border-neutral-200">
+            <div className="flex items-center space-x-4">
+              <h2 className="text-xl font-bold text-text-primary">{currentCategory.name}模型</h2>
+              <span className="px-3 py-1 bg-primary-100 text-primary-700 text-sm font-semibold rounded-full">
+                {filteredModels.length} 个模型
+              </span>
+              {searchQuery && (
+                <span className="px-2 py-1 bg-secondary-100 text-secondary-700 text-xs rounded-full">
+                  搜索: "{searchQuery}"
+                </span>
               )}
-            </button>
-          ))}
+            </div>
+            {filteredModels.length > 0 && (
+              <div className="text-sm text-text-secondary">
+                来自 {filteredBrandsCount} 个品牌
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 模型网格 */}
         {filteredModels.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-text-secondary text-lg">没有找到匹配的模型</p>
-            <p className="text-text-muted mt-2">尝试调整搜索条件或筛选器</p>
+          <div className="text-center py-16 bg-background-secondary rounded-xl border border-neutral-200">
+            <div className="max-w-md mx-auto">
+              <div className="w-16 h-16 bg-neutral-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.29-1.009-5.824-2.562M15 6.306a7.962 7.962 0 00-6 0m6 0V5a2 2 0 00-2-2H9a2 2 0 00-2 2v1.306" />
+                </svg>
+              </div>
+              <p className="text-text-secondary text-lg font-medium mb-2">没有找到匹配的模型</p>
+              <p className="text-text-muted mb-4">
+                {searchQuery ? '尝试调整搜索关键词或切换其他分类' : '该分类暂无模型，请尝试其他分类'}
+              </p>
+              <div className="flex gap-3 justify-center">
+                {searchQuery && (
+                  <button
+                    onClick={resetSearch}
+                    className="px-4 py-2 bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 transition-colors text-sm font-medium"
+                  >
+                    清除搜索
+                  </button>
+                )}
+                <button
+                  onClick={() => setActiveCategory('recommended')}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
+                >
+                  查看推荐模型
+                </button>
+              </div>
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredModels.map((model) => (
-              <ModelCard 
-                key={model.id} 
-                model={model} 
-                onAddToCompare={() => addToCompare(model)}
-                isInCompare={compareList.some(m => m.id === model.id)}
-              />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredModels.map((model, index) => (
+              <div
+                key={`${model.brand}-${model.name}-${index}`}
+                className="animate-fade-in"
+                style={{ animationDelay: `${(index % 9) * 0.1}s` }}
+              >
+                <ModelCard 
+                  model={model}
+                />
+              </div>
             ))}
           </div>
         )}
@@ -337,94 +346,100 @@ const ModelsPage: React.FC = () => {
 // 模型卡片组件
 interface ModelCardProps {
   model: Model;
-  onAddToCompare: () => void;
-  isInCompare: boolean;
 }
 
-const ModelCard: React.FC<ModelCardProps> = ({ model, onAddToCompare, isInCompare }) => {
+const ModelCard: React.FC<ModelCardProps> = ({ model }) => {
   return (
-    <div className="bg-background-secondary border border-neutral-300 rounded-lg p-6 hover:border-primary-600 transition-colors shadow-soft hover:shadow-medium">
-      {/* 品牌标签 */}
-      <div className="flex items-center justify-between mb-3">
-        <span className="inline-block px-2 py-1 bg-primary-600/20 text-primary-600 text-xs font-medium rounded-full">
-          {model.brand}
-        </span>
-        <button
-          onClick={onAddToCompare}
-          disabled={isInCompare}
-          className={`text-xs px-2 py-1 rounded transition-colors ${
-            isInCompare 
-              ? 'bg-green-500/20 text-green-400 cursor-not-allowed'
-              : 'bg-background-tertiary text-text-secondary hover:bg-primary-600 hover:text-white'
-          }`}
-        >
-          {isInCompare ? '已添加' : '对比'}
-        </button>
-      </div>
-
-      {/* 模型名称 */}
-      <h3 className="text-lg font-semibold text-text-primary mb-3 line-clamp-2">
-        {model.name}
-      </h3>
-
-      {/* 价格信息 */}
-      <div className="space-y-2 mb-4">
-        {model.providers && model.providers.length > 0 && (
-          <>
-            <div className="flex justify-between items-center">
-              <span className="text-text-secondary text-sm">最低输入价格</span>
-              <span className="text-text-primary font-medium">
-                {formatPrice(Math.min(...model.providers.map(p => p.tokens.input)), model.providers[0].tokens.unit)}/1K tokens
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-text-secondary text-sm">最低输出价格</span>
-              <span className="text-text-primary font-medium">
-                {formatPrice(Math.min(...model.providers.map(p => p.tokens.output)), model.providers[0].tokens.unit)}/1K tokens
-              </span>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* 技术参数 */}
-      <div className="space-y-2 mb-4">
-        <div className="flex justify-between items-center">
-          <span className="text-text-secondary text-sm">上下文窗口</span>
-          <span className="text-text-primary font-medium">
-            {formatWindow(model.window)}
+    <div className="bg-background-secondary border border-neutral-300 rounded-xl p-6 hover:border-primary-600 transition-all duration-300 shadow-soft hover:shadow-strong transform hover:-translate-y-1">
+      {/* 品牌标签和模型名称 */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <span className="inline-block px-3 py-1 bg-gradient-to-r from-primary-600/20 to-primary-700/20 text-primary-600 text-xs font-semibold rounded-full border border-primary-600/30">
+            {model.brand}
           </span>
         </div>
-        {model.data_amount && (
-          <div className="flex justify-between items-center">
-            <span className="text-text-secondary text-sm">训练数据量</span>
-            <span className="text-text-primary font-medium">
-              {model.data_amount}B
+        <h3 className="text-lg font-bold text-text-primary mb-2 line-clamp-2 leading-tight">
+          {model.name}
+        </h3>
+        <div className="h-px bg-gradient-to-r from-neutral-300 via-neutral-200 to-transparent mb-4"></div>
+      </div>
+
+      {/* 价格信息区域 */}
+      {model.providers && model.providers.length > 0 && (
+        <div className="mb-4">
+          <h4 className="text-sm font-semibold text-text-primary mb-3 flex items-center">
+            <div className="w-1 h-4 bg-primary-600 rounded-full mr-2"></div>
+            价格信息
+          </h4>
+          <div className="bg-gradient-to-br from-secondary-50 to-secondary-100 rounded-lg p-4 space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-text-secondary text-sm font-medium">最低输入价格</span>
+              <span className="text-text-primary font-bold text-sm">
+                {formatPrice(Math.min(...model.providers.map(p => p.tokens.input)), model.providers[0].tokens.unit)}
+                <span className="text-text-muted text-xs ml-1">/1K tokens</span>
+              </span>
+            </div>
+            <div className="h-px bg-neutral-200"></div>
+            <div className="flex justify-between items-center">
+              <span className="text-text-secondary text-sm font-medium">最低输出价格</span>
+              <span className="text-text-primary font-bold text-sm">
+                {formatPrice(Math.min(...model.providers.map(p => p.tokens.output)), model.providers[0].tokens.unit)}
+                <span className="text-text-muted text-xs ml-1">/1K tokens</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 技术参数区域 */}
+      <div className="mb-4">
+        <h4 className="text-sm font-semibold text-text-primary mb-3 flex items-center">
+          <div className="w-1 h-4 bg-secondary-600 rounded-full mr-2"></div>
+          技术参数
+        </h4>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center py-2">
+            <span className="text-text-secondary text-sm font-medium">上下文窗口</span>
+            <span className="text-text-primary font-semibold text-sm bg-background-tertiary px-2 py-1 rounded-md">
+              {formatWindow(model.window)}
             </span>
           </div>
-        )}
+          {model.data_amount && (
+            <>
+              <div className="h-px bg-neutral-200"></div>
+              <div className="flex justify-between items-center py-2">
+                <span className="text-text-secondary text-sm font-medium">训练数据量</span>
+                <span className="text-text-primary font-semibold text-sm bg-background-tertiary px-2 py-1 rounded-md">
+                  {model.data_amount}B tokens
+                </span>
+              </div>
+            </>
+          )}
+        </div>
       </div>
       
-      {/* 提供商数量信息 */}
+      {/* 提供商信息区域 */}
       {model.providers && model.providers.length > 0 && (
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-text-secondary text-xs">可用提供商</span>
+        <div className="mb-6">
+          <div className="bg-gradient-to-r from-primary-50 to-primary-100 border border-primary-200 rounded-lg p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse"></div>
+                <span className="text-primary-700 text-xs font-semibold">可用提供商</span>
+              </div>
+              <span className="text-primary-800 text-xs font-bold bg-primary-200 px-2 py-1 rounded-full">
+                {model.providers.length} 个
+              </span>
             </div>
-            <span className="text-blue-600 text-xs font-medium">
-              {model.providers.length} 个提供商
-            </span>
           </div>
         </div>
       )}
 
       {/* 操作按钮 */}
-      <div className="flex gap-2">
+      <div className="pt-2 border-t border-neutral-200">
         <Link
           to={`/models/${model.id}`}
-          className="flex-1 bg-primary-600 text-white text-center py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
+          className="block w-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white text-center py-3 px-4 rounded-lg transition-all duration-200 text-sm font-semibold shadow-medium hover:shadow-strong transform hover:-translate-y-0.5"
         >
           查看详情
         </Link>

@@ -74,6 +74,7 @@ export interface ModelListResponse {
 // 筛选选项接口
 export interface FilterOptions {
   brands?: string[];
+  providers?: string[];
   priceRange?: [number, number];
   windowRange?: [number, number];
   sortBy?: 'price' | 'window' | 'name' | 'brand';
@@ -91,8 +92,7 @@ export interface AppState {
   filters: FilterOptions;
   searchQuery: string;
   
-  // 对比功能
-  compareList: Model[];
+
   
   // UI状态
   sidebarOpen: boolean;

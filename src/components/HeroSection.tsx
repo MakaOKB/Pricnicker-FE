@@ -17,7 +17,7 @@ const HeroSection: React.FC = () => {
     {
       icon: CpuChipIcon,
       title: '全面覆盖',
-      description: '整合主流AI模型平台数据',
+      description: '整合主流AI服务平台数据',
     },
     {
       icon: ChartBarIcon,
@@ -50,7 +50,7 @@ const HeroSection: React.FC = () => {
           
           {/* Subtitle */}
           <p className="text-xl sm:text-2xl text-text-secondary mb-8 max-w-3xl mx-auto leading-relaxed">
-            整合硅基流动、AiHubMix、PPIO等主流平台，
+            整合AiHubMix、ZenMux等主流API服务平台，
             <br className="hidden sm:block" />
             帮您找到最具性价比的AI模型解决方案
           </p>
@@ -87,12 +87,7 @@ const HeroSection: React.FC = () => {
             >
               浏览所有模型
             </button>
-            <button
-              onClick={() => navigate('/compare')}
-              className="bg-background-tertiary hover:bg-neutral-200 text-primary-600 border-2 border-primary-600 px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-200 shadow-medium hover:shadow-strong transform hover:-translate-y-1"
-            >
-              开始比价
-            </button>
+
           </div>
 
           {/* Features */}

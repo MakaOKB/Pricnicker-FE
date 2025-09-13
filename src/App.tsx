@@ -5,8 +5,9 @@ import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import ModelsPage from './pages/ModelsPage';
 import ModelDetailPage from './pages/ModelDetailPage';
-import ComparePage from './pages/ComparePage';
+
 import SearchPage from './pages/SearchPage';
+import HelpPage from './pages/HelpPage';
 
 // 创建React Query客户端
 const queryClient = new QueryClient({
@@ -26,12 +27,13 @@ function App() {
       <Router>
         <Layout>
           <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/models" element={<ModelsPage />} />
-            <Route path="/models/:id" element={<ModelDetailPage />} />
-            <Route path="/compare" element={<ComparePage />} />
-            <Route path="/search" element={<SearchPage />} />
-          </Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/models" element={<ModelsPage />} />
+          <Route path="/models/:id" element={<ModelDetailPage />} />
+
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/help" element={<HelpPage />} />
+        </Routes>
         </Layout>
       </Router>
     </QueryClientProvider>

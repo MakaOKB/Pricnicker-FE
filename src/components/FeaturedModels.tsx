@@ -2,118 +2,120 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { ModelsApi } from '../api/models';
-import { useAppStore } from '../store';
-import { ArrowRightIcon, PlusIcon, CheckIcon } from '@heroicons/react/24/outline';
+
+import { ArrowRightIcon } from '@heroicons/react/24/outline';
 import { Model } from '../types';
 import { formatPrice, formatWindow } from '../lib/utils';
 
 interface ModelCardProps {
   model: Model;
-  onAddToCompare: (model: Model) => void;
-  isInCompareList: boolean;
 }
 
-const ModelCard: React.FC<ModelCardProps> = ({ model, onAddToCompare, isInCompareList }) => {
-  const handleAddToCompare = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onAddToCompare(model);
-  };
+const ModelCard: React.FC<ModelCardProps> = ({ model }) => {
 
   return (
     <Link
       to={`/models/${model.id}`}
-      className="group block bg-background-secondary rounded-2xl shadow-soft hover:shadow-medium transition-all duration-300 transform hover:-translate-y-2 border border-neutral-300 hover:border-primary-600"
+      className="group block bg-background-secondary rounded-2xl shadow-soft hover:shadow-strong transition-all duration-300 transform hover:-translate-y-2 border border-neutral-300 hover:border-primary-600"
     >
       <div className="p-6">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <div className="text-sm font-medium text-primary-600 mb-1">
+        {/* 品牌标签和模型名称 */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <span className="inline-block px-3 py-1 bg-gradient-to-r from-primary-600/20 to-primary-700/20 text-primary-600 text-xs font-semibold rounded-full border border-primary-600/30">
               {model.brand}
+            </span>
+            <div className="flex items-center space-x-1">
+              <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse"></div>
+              <span className="text-xs text-primary-600 font-medium">推荐</span>
             </div>
-            <h3 className="text-lg font-semibold text-text-primary group-hover:text-primary-600 transition-colors duration-200">
-              {model.name}
-            </h3>
           </div>
-          <button
-            onClick={handleAddToCompare}
-            className={`p-2 rounded-lg transition-all duration-200 ${
-              isInCompareList
-                ? 'bg-primary-200 text-primary-600'
-                : 'bg-neutral-300 text-text-muted hover:bg-primary-200 hover:text-primary-600'
-            }`}
-            title={isInCompareList ? '已添加到对比' : '添加到对比'}
-          >
-            {isInCompareList ? (
-              <CheckIcon className="h-4 w-4" />
-            ) : (
-              <PlusIcon className="h-4 w-4" />
-            )}
-          </button>
+          <h3 className="text-lg font-bold text-text-primary group-hover:text-primary-600 transition-colors duration-200 mb-2 line-clamp-2 leading-tight">
+            {model.name}
+          </h3>
+          <div className="h-px bg-gradient-to-r from-neutral-300 via-neutral-200 to-transparent mb-4"></div>
         </div>
 
-        {/* Specs */}
-        <div className="space-y-3 mb-6">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-text-secondary">上下文窗口</span>
-            <span className="text-sm font-medium text-text-primary">
-              {formatWindow(model.window)} tokens
-            </span>
-          </div>
-          
-          {model.data_amount && (
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-text-secondary">训练数据</span>
-              <span className="text-sm font-medium text-text-primary">
-                {model.data_amount}B tokens
+        {/* 技术参数区域 */}
+        <div className="mb-4">
+          <h4 className="text-sm font-semibold text-text-primary mb-3 flex items-center">
+            <div className="w-1 h-4 bg-secondary-600 rounded-full mr-2"></div>
+            技术参数
+          </h4>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center py-2">
+              <span className="text-text-secondary text-sm font-medium">上下文窗口</span>
+              <span className="text-text-primary font-semibold text-sm bg-background-tertiary px-2 py-1 rounded-md">
+                {formatWindow(model.window)}
               </span>
             </div>
-          )}
+            {model.data_amount && (
+              <>
+                <div className="h-px bg-neutral-200"></div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-text-secondary text-sm font-medium">训练数据</span>
+                  <span className="text-text-primary font-semibold text-sm bg-background-tertiary px-2 py-1 rounded-md">
+                    {model.data_amount}B tokens
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Pricing */}
+        {/* 价格信息区域 */}
         {model.providers && model.providers.length > 0 && (
-          <div className="bg-gradient-to-r from-secondary-100 to-secondary-200 rounded-xl p-4 mb-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center">
-                <div className="text-lg font-bold text-text-primary">
-                  {formatPrice(Math.min(...model.providers.map(p => p.tokens.input)), model.providers[0].tokens.unit)}
+          <div className="mb-4">
+            <h4 className="text-sm font-semibold text-text-primary mb-3 flex items-center">
+              <div className="w-1 h-4 bg-primary-600 rounded-full mr-2"></div>
+              价格信息
+            </h4>
+            <div className="bg-gradient-to-br from-secondary-50 to-secondary-100 rounded-xl p-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <div className="text-lg font-bold text-text-primary mb-1">
+                    {formatPrice(Math.min(...model.providers.map(p => p.tokens.input)), model.providers[0].tokens.unit)}
+                  </div>
+                  <div className="text-xs text-text-secondary font-medium">最低输入/千tokens</div>
                 </div>
-                <div className="text-xs text-text-secondary">最低输入/千tokens</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-bold text-text-primary">
-                  {formatPrice(Math.min(...model.providers.map(p => p.tokens.output)), model.providers[0].tokens.unit)}
+                <div className="text-center border-l border-neutral-200 pl-4">
+                  <div className="text-lg font-bold text-text-primary mb-1">
+                    {formatPrice(Math.min(...model.providers.map(p => p.tokens.output)), model.providers[0].tokens.unit)}
+                  </div>
+                  <div className="text-xs text-text-secondary font-medium">最低输出/千tokens</div>
                 </div>
-                <div className="text-xs text-text-secondary">最低输出/千tokens</div>
               </div>
             </div>
           </div>
         )}
         
-        {/* 提供商数量信息 */}
+        {/* 提供商信息区域 */}
         {model.providers && model.providers.length > 0 && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span className="text-text-secondary text-xs">可用提供商</span>
+          <div className="mb-4">
+            <div className="bg-gradient-to-r from-primary-50 to-primary-100 border border-primary-200 rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse"></div>
+                  <span className="text-primary-700 text-xs font-semibold">可用提供商</span>
+                </div>
+                <span className="text-primary-800 text-xs font-bold bg-primary-200 px-2 py-1 rounded-full">
+                  {model.providers.length} 个
+                </span>
               </div>
-              <span className="text-blue-600 text-xs font-medium">
-                {model.providers.length} 个提供商
-              </span>
             </div>
           </div>
         )}
 
-        {/* Performance indicator */}
-        <div className="flex items-center justify-between">
+        {/* 底部操作区域 */}
+        <div className="pt-3 border-t border-neutral-200 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-primary-500 rounded-full"></div>
-            <span className="text-xs text-text-secondary">性价比推荐</span>
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-xs text-green-600 font-semibold">性价比推荐</span>
           </div>
-          <ArrowRightIcon className="h-4 w-4 text-text-muted group-hover:text-primary-600 transition-colors duration-200" />
+          <div className="flex items-center space-x-1 text-primary-600 group-hover:text-primary-700">
+            <span className="text-xs font-medium">查看详情</span>
+            <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+          </div>
         </div>
       </div>
     </Link>
@@ -121,20 +123,10 @@ const ModelCard: React.FC<ModelCardProps> = ({ model, onAddToCompare, isInCompar
 };
 
 const FeaturedModels: React.FC = () => {
-  const { addToCompare, compareList } = useAppStore();
-
   const { data: featuredModels = [], isLoading, error } = useQuery({
     queryKey: ['featured-models'],
     queryFn: () => ModelsApi.getFeaturedModels(6),
   });
-
-  const handleAddToCompare = (model: Model) => {
-    addToCompare(model);
-  };
-
-  const isInCompareList = (modelId: string) => {
-    return compareList.some(model => model.id === modelId);
-  };
 
   if (error) {
     return (
@@ -158,17 +150,7 @@ const FeaturedModels: React.FC = () => {
             基于性价比分析，为您推荐最具价值的AI模型
           </p>
           
-          {compareList.length > 0 && (
-            <div className="inline-flex items-center bg-primary-200 text-primary-600 px-4 py-2 rounded-full text-sm font-medium">
-              已选择 {compareList.length} 个模型进行对比
-              <Link
-                to="/compare"
-                className="ml-2 text-primary-600 hover:text-primary-700 font-semibold"
-              >
-                查看对比 →
-              </Link>
-            </div>
-          )}
+
         </div>
 
         {/* Models grid */}
@@ -193,14 +175,12 @@ const FeaturedModels: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {featuredModels.map((model, index) => (
               <div
-                key={model.id}
+                key={`${model.brand}-${model.name}-${index}`}
                 className="animate-slide-up"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <ModelCard
                   model={model}
-                  onAddToCompare={handleAddToCompare}
-                  isInCompareList={isInCompareList(model.id!)}
                 />
               </div>
             ))}

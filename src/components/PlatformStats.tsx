@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ModelsApi } from '../api/models';
-import { CpuChipIcon, BuildingOfficeIcon, CurrencyDollarIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { CpuChipIcon, BuildingOfficeIcon, ServerIcon } from '@heroicons/react/24/outline';
 
 interface StatItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -24,14 +24,10 @@ const PlatformStats: React.FC = () => {
     if (!models.length) return [];
 
     const brands = [...new Set(models.map(model => model.brand))];
-    // 计算所有提供商的平均输入价格
-    const allInputPrices = models.flatMap(model => 
-      model.providers?.map(p => p.tokens.input) || []
-    );
-    const avgInputPrice = allInputPrices.length > 0 
-      ? allInputPrices.reduce((sum, price) => sum + price, 0) / allInputPrices.length 
-      : 0;
-    const avgWindow = models.reduce((sum, model) => sum + model.window, 0) / models.length;
+    // 计算所有提供商数量
+    const allProviders = [...new Set(models.flatMap(model => 
+      model.providers?.map(p => p.name) || []
+    ))];
 
     return [
       {
@@ -44,27 +40,19 @@ const PlatformStats: React.FC = () => {
       },
       {
         icon: BuildingOfficeIcon,
-        label: '支持平台',
+        label: '收录厂商',
         value: brands.length.toString(),
-        description: '个AI平台',
+        description: '个AI厂商',
         color: 'text-primary-600',
         numericValue: brands.length,
       },
       {
-        icon: CurrencyDollarIcon,
-        label: '平均输入价格',
-        value: avgInputPrice.toFixed(2),
-        description: 'CNY/千tokens',
+        icon: ServerIcon,
+        label: '服务平台',
+        value: allProviders.length.toString(),
+        description: '个API平台',
         color: 'text-primary-600',
-        numericValue: avgInputPrice,
-      },
-      {
-        icon: ClockIcon,
-        label: '平均上下文',
-        value: (avgWindow / 1000).toFixed(0) + 'K',
-        description: 'tokens窗口',
-        color: 'text-primary-600',
-        numericValue: avgWindow / 1000,
+        numericValue: allProviders.length,
       },
     ];
   }, [models]);
@@ -105,22 +93,15 @@ const PlatformStats: React.FC = () => {
   // 格式化动画值
   const formatAnimatedValue = (stat: any): string => {
     const animatedValue = animatedValues[stat.label] || 0;
-    
-    if (stat.label === '平均输入价格') {
-      return animatedValue.toFixed(2);
-    } else if (stat.label === '平均上下文') {
-      return Math.floor(animatedValue) + 'K';
-    } else {
-      return Math.floor(animatedValue).toString();
-    }
+    return Math.floor(animatedValue).toString();
   };
 
   if (isLoading) {
     return (
       <div className="bg-background-primary py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[...Array(4)].map((_, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[...Array(3)].map((_, index) => (
               <div key={index} className="text-center">
                 <div className="w-16 h-16 bg-neutral-300 rounded-2xl mx-auto mb-4 animate-pulse"></div>
                 <div className="h-8 bg-neutral-300 rounded mb-2 animate-pulse"></div>
@@ -147,7 +128,7 @@ const PlatformStats: React.FC = () => {
         </div>
 
         {/* Stats grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {stats.map((stat, index) => {
             const IconComponent = stat.icon;
             return (

@@ -21,7 +21,7 @@ import { formatPrice, formatWindow, getCurrencySymbol } from '../lib/utils';
 const ModelDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addToCompare, compareList } = useAppStore();
+
   
   const [inputTokens, setInputTokens] = useState<number>(1000);
   const [outputTokens, setOutputTokens] = useState<number>(1000);
@@ -63,7 +63,7 @@ const ModelDetailPage: React.FC = () => {
   };
 
   const priceResult = calculatePrice();
-  const isInCompare = model ? compareList.some(m => m.id === model.id) : false;
+
   const similarModels = featuredModels.filter(m => m.id !== model?.id).slice(0, 3);
 
   if (isLoading) {
@@ -174,27 +174,7 @@ const ModelDetailPage: React.FC = () => {
               </div>
             </div>
             
-            {/* 操作按钮 */}
-            <div className="flex flex-col gap-3 lg:w-48">
-              <button
-                onClick={() => addToCompare(model)}
-                disabled={isInCompare}
-                className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
-                  isInCompare
-                    ? 'bg-green-500/20 text-green-400 cursor-not-allowed'
-                    : 'bg-primary-600 text-white hover:bg-primary-700'
-                }`}
-              >
-                {isInCompare ? '已添加到对比' : '添加到对比'}
-              </button>
-              
-              <Link
-                to="/compare"
-                className="w-full py-2 px-4 bg-background-tertiary text-text-primary text-center rounded-lg hover:bg-neutral-300 transition-colors"
-              >
-                查看对比
-              </Link>
-            </div>
+
           </div>
         </div>
 
@@ -414,9 +394,9 @@ const ModelDetailPage: React.FC = () => {
                 </h2>
                 
                 <div className="space-y-4">
-                  {similarModels.map((similarModel) => (
+                  {similarModels.map((similarModel, index) => (
                     <Link
-                      key={similarModel.id}
+                      key={`${similarModel.brand}-${similarModel.name}-${index}`}
                       to={`/models/${similarModel.id}`}
                       className="block p-4 bg-background-primary rounded-lg hover:bg-background-tertiary transition-colors"
                     >

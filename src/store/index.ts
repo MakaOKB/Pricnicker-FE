@@ -13,10 +13,7 @@ interface AppStore extends AppState {
   clearFilters: () => void;
   setSearchQuery: (query: string) => void;
   
-  // Actions for compare functionality
-  addToCompare: (model: Model) => void;
-  removeFromCompare: (modelId: string) => void;
-  clearCompareList: () => void;
+
   
   // Actions for UI state
   setSidebarOpen: (open: boolean) => void;
@@ -40,7 +37,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   error: null,
   filters: initialFilters,
   searchQuery: '',
-  compareList: [],
+
   sidebarOpen: false,
   theme: 'light',
   
@@ -57,24 +54,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   clearFilters: () => set({ filters: initialFilters }),
   setSearchQuery: (searchQuery) => set({ searchQuery }),
   
-  // Compare actions
-  addToCompare: (model) => set((state) => {
-    // 限制对比列表最多4个模型
-    if (state.compareList.length >= 4) {
-      return state;
-    }
-    // 检查是否已存在
-    if (state.compareList.some(m => m.id === model.id)) {
-      return state;
-    }
-    return {
-      compareList: [...state.compareList, model]
-    };
-  }),
-  removeFromCompare: (modelId) => set((state) => ({
-    compareList: state.compareList.filter(m => m.id !== modelId)
-  })),
-  clearCompareList: () => set({ compareList: [] }),
+
   
   // UI actions
   setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),

@@ -7,39 +7,32 @@ const Footer: React.FC = () => {
   const footerLinks = {
     product: [
       { name: '模型列表', href: '/models' },
-      { name: '价格对比', href: '/compare' },
       { name: '搜索', href: '/search' },
     ],
     support: [
-      { name: '帮助中心', href: '#' },
-      { name: '联系我们', href: '#' },
-      { name: 'API文档', href: '#' },
-    ],
-    company: [
-      { name: '关于我们', href: '#' },
-      { name: '隐私政策', href: '#' },
-      { name: '服务条款', href: '#' },
-    ],
+        { name: '帮助中心', href: '/help' },
+        { name: '联系我们', href: '#' },
+        { name: 'API文档', href: '#' },
+      ],
   };
 
   const supportedPlatforms = [
-    '硅基流动',
     'AiHubMix',
-    'PPIO',
-    'MaxHub',
     'ZenMux',
   ];
 
   return (
     <footer className="bg-background-secondary border-t border-neutral-300">
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand Section */}
           <div className="col-span-1 md:col-span-1">
             <div className="flex items-center mb-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary-600 to-primary-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">P</span>
-              </div>
+              <img 
+                src="/image.png" 
+                alt="Pricnicker Logo" 
+                className="w-8 h-8 rounded-xl object-cover shadow-sm"
+              />
               <span className="ml-2 text-xl font-bold text-text-primary">Pricnicker</span>
             </div>
             <p className="text-text-secondary text-sm mb-4">
@@ -96,24 +89,7 @@ const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Company Links */}
-          <div>
-            <h3 className="text-sm font-semibold text-text-primary tracking-wider uppercase mb-4">
-              公司
-            </h3>
-            <ul className="space-y-3">
-              {footerLinks.company.map((link) => (
-                <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="text-text-secondary hover:text-primary-600 text-sm transition-colors duration-200"
-                  >
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+
         </div>
 
         {/* Bottom Section */}

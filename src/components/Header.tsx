@@ -7,7 +7,7 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { compareList } = useAppStore();
+
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +20,7 @@ const Header: React.FC = () => {
   const navigation = [
     { name: '首页', href: '/' },
     { name: '模型列表', href: '/models' },
-    { name: '价格对比', href: '/compare', badge: compareList.length > 0 ? compareList.length : undefined },
+
   ];
 
   return (
@@ -48,11 +48,7 @@ const Header: React.FC = () => {
                 className="relative text-text-secondary hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
               >
                 {item.name}
-                {item.badge && (
-                  <span className="absolute -top-1 -right-1 bg-primary-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {item.badge}
-                  </span>
-                )}
+
               </Link>
             ))}
           </nav>
@@ -117,11 +113,7 @@ const Header: React.FC = () => {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.name}
-                  {item.badge && (
-                    <span className="ml-2 bg-primary-600 text-white text-xs rounded-full h-5 w-5 inline-flex items-center justify-center">
-                      {item.badge}
-                    </span>
-                  )}
+
                 </Link>
               ))}
             </div>

@@ -18,7 +18,7 @@ const SearchPage: React.FC = () => {
   const query = searchParams.get('q') || '';
   const brand = searchParams.get('brand') || '';
   
-  const { addToCompare, compareList } = useAppStore();
+
   const [localQuery, setLocalQuery] = useState(query);
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState<FilterOptions['sortBy']>('name');
@@ -64,8 +64,8 @@ const SearchPage: React.FC = () => {
         
         switch (sortBy) {
           case 'price':
-            aValue = a.tokens.input;
-            bValue = b.tokens.input;
+            aValue = a.providers && a.providers.length > 0 ? Math.min(...a.providers.map(p => p.tokens.input)) : 0;
+            bValue = b.providers && b.providers.length > 0 ? Math.min(...b.providers.map(p => p.tokens.input)) : 0;
             break;
           case 'window':
             aValue = a.window;
@@ -299,13 +299,11 @@ const SearchPage: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {searchResults.map((model) => (
+            {searchResults.map((model, index) => (
               <SearchResultCard 
-                key={model.id} 
+                key={`${model.brand}-${model.name}-${index}`} 
                 model={model} 
                 searchQuery={query}
-                onAddToCompare={() => addToCompare(model)}
-                isInCompare={compareList.some(m => m.id === model.id)}
               />
             ))}
           </div>
@@ -319,15 +317,11 @@ const SearchPage: React.FC = () => {
 interface SearchResultCardProps {
   model: Model;
   searchQuery: string;
-  onAddToCompare: () => void;
-  isInCompare: boolean;
 }
 
 const SearchResultCard: React.FC<SearchResultCardProps> = ({ 
   model, 
-  searchQuery, 
-  onAddToCompare, 
-  isInCompare 
+  searchQuery
 }) => {
   // 高亮搜索关键词
   const highlightText = (text: string, query: string) => {
@@ -350,17 +344,7 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
         <span className="inline-block px-2 py-1 bg-primary-600/20 text-primary-600 text-xs font-medium rounded-full">
           {highlightText(model.brand, searchQuery)}
         </span>
-        <button
-          onClick={onAddToCompare}
-          disabled={isInCompare}
-          className={`text-xs px-2 py-1 rounded transition-colors ${
-            isInCompare 
-              ? 'bg-green-500/20 text-green-400 cursor-not-allowed'
-              : 'bg-background-tertiary text-text-secondary hover:bg-primary-600 hover:text-white'
-          }`}
-        >
-          {isInCompare ? '已添加' : '对比'}
-        </button>
+
       </div>
 
       {/* 模型名称 */}
@@ -408,13 +392,13 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
       
       {/* 提供商数量信息 */}
       {model.providers && model.providers.length > 0 && (
-        <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+        <div className="mb-4 p-3 bg-slate-700 border border-slate-600 rounded-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-text-secondary text-xs">可用提供商</span>
+              <div className="w-2 h-2 bg-slate-300 rounded-full"></div>
+              <span className="text-slate-300 text-xs">可用提供商</span>
             </div>
-            <span className="text-blue-400 text-xs font-medium">
+            <span className="text-slate-200 text-xs font-medium">
               {model.providers.length} 个提供商
             </span>
           </div>
