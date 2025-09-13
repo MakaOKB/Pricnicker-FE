@@ -22,7 +22,6 @@ export interface ModelInfo {
   name: string;
   data_amount: number | null;
   window: number;
-  tokens?: TokenInfo; // 可选，具体价格请参考providers中的价格
   providers: ProviderInfo[];
 }
 

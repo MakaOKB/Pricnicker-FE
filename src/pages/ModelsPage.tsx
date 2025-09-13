@@ -53,9 +53,11 @@ const ModelsPage: React.FC = () => {
     // 价格范围过滤
     if (filters.priceRange) {
       const [min, max] = filters.priceRange;
-      result = result.filter(model => 
-        model.tokens.input >= min && model.tokens.input <= max
-      );
+      result = result.filter(model => {
+        if (!model.providers || model.providers.length === 0) return false;
+        const minInputPrice = Math.min(...model.providers.map(p => p.tokens.input));
+        return minInputPrice >= min && minInputPrice <= max;
+      });
     }
 
     // 窗口大小过滤
@@ -73,8 +75,8 @@ const ModelsPage: React.FC = () => {
         
         switch (filters.sortBy) {
           case 'price':
-            aValue = a.tokens.input;
-            bValue = b.tokens.input;
+            aValue = a.providers && a.providers.length > 0 ? Math.min(...a.providers.map(p => p.tokens.input)) : 0;
+            bValue = b.providers && b.providers.length > 0 ? Math.min(...b.providers.map(p => p.tokens.input)) : 0;
             break;
           case 'window':
             aValue = a.window;
@@ -367,18 +369,18 @@ const ModelCard: React.FC<ModelCardProps> = ({ model, onAddToCompare, isInCompar
 
       {/* 价格信息 */}
       <div className="space-y-2 mb-4">
-        {model.tokens && (
+        {model.providers && model.providers.length > 0 && (
           <>
             <div className="flex justify-between items-center">
-              <span className="text-text-secondary text-sm">输入价格</span>
+              <span className="text-text-secondary text-sm">最低输入价格</span>
               <span className="text-text-primary font-medium">
-                {formatPrice(model.tokens.input, model.tokens.unit)}/1K tokens
+                {formatPrice(Math.min(...model.providers.map(p => p.tokens.input)), model.providers[0].tokens.unit)}/1K tokens
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-text-secondary text-sm">输出价格</span>
+              <span className="text-text-secondary text-sm">最低输出价格</span>
               <span className="text-text-primary font-medium">
-                {formatPrice(model.tokens.output, model.tokens.unit)}/1K tokens
+                {formatPrice(Math.min(...model.providers.map(p => p.tokens.output)), model.providers[0].tokens.unit)}/1K tokens
               </span>
             </div>
           </>

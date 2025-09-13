@@ -109,9 +109,11 @@ export const useFilteredModels = () => {
   // Apply price range filter
   if (filters.priceRange) {
     const [minPrice, maxPrice] = filters.priceRange;
-    filteredModels = filteredModels.filter(model => 
-      model.tokens.input >= minPrice && model.tokens.input <= maxPrice
-    );
+    filteredModels = filteredModels.filter(model => {
+      if (!model.providers || model.providers.length === 0) return false;
+      const minInputPrice = Math.min(...model.providers.map(p => p.tokens.input));
+      return minInputPrice >= minPrice && minInputPrice <= maxPrice;
+    });
   }
   
   // Apply window range filter
@@ -129,8 +131,8 @@ export const useFilteredModels = () => {
       
       switch (filters.sortBy) {
         case 'price':
-          aValue = a.tokens.input;
-          bValue = b.tokens.input;
+          aValue = a.providers && a.providers.length > 0 ? Math.min(...a.providers.map(p => p.tokens.input)) : 0;
+          bValue = b.providers && b.providers.length > 0 ? Math.min(...b.providers.map(p => p.tokens.input)) : 0;
           break;
         case 'window':
           aValue = a.window;
@@ -169,7 +171,10 @@ export const useAvailableBrands = () => {
 export const usePriceRange = () => {
   const { models } = useAppStore();
   if (models.length === 0) return [0, 100];
-  const prices = models.map(model => model.tokens.input);
+  const prices = models.flatMap(model => 
+    model.providers?.map(p => p.tokens.input) || []
+  );
+  if (prices.length === 0) return [0, 100];
   return [Math.min(...prices), Math.max(...prices)];
 };
 

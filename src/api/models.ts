@@ -1,6 +1,25 @@
 import apiClient from './client';
 import { Model, ModelInfo, FilterOptions, SearchResult, BrandsResponse, ErrorResponse, ProviderInfo } from '../types';
 
+// 辅助函数：获取模型的最低输入价格
+function getMinInputPrice(model: Model): number {
+  if (!model.providers || model.providers.length === 0) return 0;
+  return Math.min(...model.providers.map(p => p.tokens.input));
+}
+
+// 辅助函数：获取模型的最低输出价格
+function getMinOutputPrice(model: Model): number {
+  if (!model.providers || model.providers.length === 0) return 0;
+  return Math.min(...model.providers.map(p => p.tokens.output));
+}
+
+// 辅助函数：获取模型的平均输入价格
+function getAvgInputPrice(model: Model): number {
+  if (!model.providers || model.providers.length === 0) return 0;
+  const sum = model.providers.reduce((acc, p) => acc + p.tokens.input, 0);
+  return sum / model.providers.length;
+}
+
 // 模型API服务类
 export class ModelsApi {
   // 获取全局模型列表 (根据API规范: GET /v1/query/models)
@@ -77,12 +96,13 @@ export class ModelsApi {
       );
     }
 
-    // 按价格范围筛选（基于输入token价格）
+    // 按价格范围筛选（基于最低输入token价格）
     if (filters.priceRange) {
       const [minPrice, maxPrice] = filters.priceRange;
-      filteredModels = filteredModels.filter(model => 
-        model.tokens.input >= minPrice && model.tokens.input <= maxPrice
-      );
+      filteredModels = filteredModels.filter(model => {
+        const modelMinPrice = getMinInputPrice(model);
+        return modelMinPrice >= minPrice && modelMinPrice <= maxPrice;
+      });
     }
 
     // 按窗口大小筛选
@@ -100,8 +120,8 @@ export class ModelsApi {
         
         switch (filters.sortBy) {
           case 'price':
-            aValue = a.tokens.input;
-            bValue = b.tokens.input;
+            aValue = getMinInputPrice(a);
+            bValue = getMinInputPrice(b);
             break;
           case 'window':
             aValue = a.window;
@@ -145,7 +165,8 @@ export class ModelsApi {
   // 获取价格范围
   static async getPriceRange(): Promise<[number, number]> {
     const models = await this.getModels();
-    const prices = models.map(model => model.tokens.input);
+    const prices = models.map(model => getMinInputPrice(model)).filter(price => price > 0);
+    if (prices.length === 0) return [0, 0];
     return [Math.min(...prices), Math.max(...prices)];
   }
 
@@ -159,11 +180,16 @@ export class ModelsApi {
   // 获取推荐模型（基于性价比）
   static async getFeaturedModels(limit: number = 6): Promise<Model[]> {
     const models = await this.getModels();
-    // 简单的性价比计算：窗口大小 / (输入价格 + 输出价格)
-    const modelsWithScore = models.map(model => ({
-      ...model,
-      score: model.window / (model.tokens.input + model.tokens.output),
-    }));
+    // 简单的性价比计算：窗口大小 / (最低输入价格 + 最低输出价格)
+    const modelsWithScore = models.map(model => {
+      const minInputPrice = getMinInputPrice(model);
+      const minOutputPrice = getMinOutputPrice(model);
+      const totalPrice = minInputPrice + minOutputPrice;
+      return {
+        ...model,
+        score: totalPrice > 0 ? model.window / totalPrice : 0,
+      };
+    });
     
     return modelsWithScore
       .sort((a, b) => b.score - a.score)

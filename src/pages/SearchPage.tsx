@@ -370,18 +370,18 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
 
       {/* 价格信息 */}
       <div className="space-y-2 mb-4">
-        {model.tokens && (
+        {model.providers && model.providers.length > 0 && (
           <>
             <div className="flex justify-between items-center">
-              <span className="text-text-secondary text-sm">输入价格</span>
+              <span className="text-text-secondary text-sm">最低输入价格</span>
               <span className="text-text-primary font-medium">
-                {model.tokens.input} {model.tokens.unit}/1K tokens
+                {Math.min(...model.providers.map(p => p.tokens.input))} {model.providers[0].tokens.unit}/1K tokens
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-text-secondary text-sm">输出价格</span>
+              <span className="text-text-secondary text-sm">最低输出价格</span>
               <span className="text-text-primary font-medium">
-                {model.tokens.output} {model.tokens.unit}/1K tokens
+                {Math.min(...model.providers.map(p => p.tokens.output))} {model.providers[0].tokens.unit}/1K tokens
               </span>
             </div>
           </>

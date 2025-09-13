@@ -24,7 +24,13 @@ const PlatformStats: React.FC = () => {
     if (!models.length) return [];
 
     const brands = [...new Set(models.map(model => model.brand))];
-    const avgInputPrice = models.reduce((sum, model) => sum + model.tokens.input, 0) / models.length;
+    // 计算所有提供商的平均输入价格
+    const allInputPrices = models.flatMap(model => 
+      model.providers?.map(p => p.tokens.input) || []
+    );
+    const avgInputPrice = allInputPrices.length > 0 
+      ? allInputPrices.reduce((sum, price) => sum + price, 0) / allInputPrices.length 
+      : 0;
     const avgWindow = models.reduce((sum, model) => sum + model.window, 0) / models.length;
 
     return [
@@ -41,7 +47,7 @@ const PlatformStats: React.FC = () => {
         label: '支持平台',
         value: brands.length.toString(),
         description: '个AI平台',
-        color: 'text-secondary-300',
+        color: 'text-primary-600',
         numericValue: brands.length,
       },
       {
@@ -49,7 +55,7 @@ const PlatformStats: React.FC = () => {
         label: '平均输入价格',
         value: avgInputPrice.toFixed(2),
         description: 'CNY/千tokens',
-        color: 'text-primary-500',
+        color: 'text-primary-600',
         numericValue: avgInputPrice,
       },
       {
@@ -57,7 +63,7 @@ const PlatformStats: React.FC = () => {
         label: '平均上下文',
         value: (avgWindow / 1000).toFixed(0) + 'K',
         description: 'tokens窗口',
-        color: 'text-secondary-200',
+        color: 'text-primary-600',
         numericValue: avgWindow / 1000,
       },
     ];
@@ -155,15 +161,15 @@ const PlatformStats: React.FC = () => {
                     <IconComponent className={`h-8 w-8 ${stat.color}`} />
                   </div>
                   
-                  <div className={`text-4xl font-bold ${stat.color} mb-2`}>
+                  <div className={`text-4xl font-bold ${stat.color} group-hover:text-primary-700 mb-2 transition-colors duration-300`}>
                     {formatAnimatedValue(stat)}
                   </div>
                   
-                  <div className="text-lg font-semibold text-text-primary mb-1">
+                  <div className="text-lg font-semibold text-white mb-1">
                     {stat.label}
                   </div>
                   
-                  <div className="text-sm text-text-secondary">
+                  <div className="text-sm text-white opacity-80">
                     {stat.description}
                   </div>
                 </div>

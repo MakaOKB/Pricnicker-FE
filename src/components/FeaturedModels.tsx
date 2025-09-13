@@ -73,20 +73,20 @@ const ModelCard: React.FC<ModelCardProps> = ({ model, onAddToCompare, isInCompar
         </div>
 
         {/* Pricing */}
-        {model.tokens && (
+        {model.providers && model.providers.length > 0 && (
           <div className="bg-gradient-to-r from-secondary-100 to-secondary-200 rounded-xl p-4 mb-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
                 <div className="text-lg font-bold text-text-primary">
-                  {formatPrice(model.tokens.input, model.tokens.unit)}
+                  {formatPrice(Math.min(...model.providers.map(p => p.tokens.input)), model.providers[0].tokens.unit)}
                 </div>
-                <div className="text-xs text-text-secondary">输入/千tokens</div>
+                <div className="text-xs text-text-secondary">最低输入/千tokens</div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-bold text-text-primary">
-                  {formatPrice(model.tokens.output, model.tokens.unit)}
+                  {formatPrice(Math.min(...model.providers.map(p => p.tokens.output)), model.providers[0].tokens.unit)}
                 </div>
-                <div className="text-xs text-text-secondary">输出/千tokens</div>
+                <div className="text-xs text-text-secondary">最低输出/千tokens</div>
               </div>
             </div>
           </div>

@@ -30,9 +30,11 @@ const Header: React.FC = () => {
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link to="/" className="flex items-center">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary-600 to-primary-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">P</span>
-              </div>
+              <img 
+                src="/image.png" 
+                alt="Pricnicker Logo" 
+                className="w-10 h-10 rounded-xl object-cover shadow-sm hover:shadow-md transition-shadow duration-200"
+              />
               <span className="ml-2 text-xl font-bold text-text-primary">Pricnicker</span>
             </Link>
           </div>

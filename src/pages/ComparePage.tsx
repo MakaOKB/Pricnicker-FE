@@ -22,8 +22,23 @@ const ComparePage: React.FC = () => {
   // 计算每个模型的成本
   const calculateCosts = () => {
     return compareList.map(model => {
-      const inputCost = (inputTokens / 1000) * model.tokens.input;
-      const outputCost = (outputTokens / 1000) * model.tokens.output;
+      // 使用最低价格的提供商进行计算
+      const minProvider = model.providers?.reduce((min, current) => 
+        (current.tokens.input + current.tokens.output) < (min.tokens.input + min.tokens.output) ? current : min
+      );
+      
+      if (!minProvider) {
+        return {
+          model,
+          inputCost: 0,
+          outputCost: 0,
+          totalCost: 0,
+          unit: 'CNY' as const
+        };
+      }
+      
+      const inputCost = (inputTokens / 1000) * minProvider.tokens.input;
+      const outputCost = (outputTokens / 1000) * minProvider.tokens.output;
       const totalCost = inputCost + outputCost;
       
       return {
@@ -31,7 +46,8 @@ const ComparePage: React.FC = () => {
         inputCost,
         outputCost,
         totalCost,
-        unit: model.tokens.unit
+        unit: minProvider.tokens.unit,
+        provider: minProvider
       };
     });
   };
@@ -158,7 +174,7 @@ const ComparePage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-300">
-                {costs.map(({ model, inputCost, outputCost, totalCost, unit }) => (
+                {costs.map(({ model, inputCost, outputCost, totalCost, unit, provider }) => (
                   <tr key={model.id} className="hover:bg-background-primary/50 transition-colors">
                     {/* 模型信息 */}
                     <td className="px-6 py-4">
@@ -181,22 +197,40 @@ const ComparePage: React.FC = () => {
                     
                     {/* 输入价格 */}
                     <td className="px-6 py-4 text-center">
-                      <div className="text-text-primary font-semibold">
-                        {formatPrice(model.tokens.input, model.tokens.unit)}
-                      </div>
-                      <div className="text-text-muted text-xs">
-                        /1K tokens
-                      </div>
+                      {provider ? (
+                        <>
+                          <div className="text-text-primary font-semibold">
+                            {formatPrice(provider.tokens.input, provider.tokens.unit)}
+                          </div>
+                          <div className="text-text-muted text-xs">
+                            /1K tokens
+                          </div>
+                          <div className="text-text-muted text-xs">
+                            {provider.display_name}
+                          </div>
+                        </>
+                      ) : (
+                        <span className="text-text-muted">-</span>
+                      )}
                     </td>
                     
                     {/* 输出价格 */}
                     <td className="px-6 py-4 text-center">
-                      <div className="text-text-primary font-semibold">
-                        {formatPrice(model.tokens.output, model.tokens.unit)}
-                      </div>
-                      <div className="text-text-muted text-xs">
-                        /1K tokens
-                      </div>
+                      {provider ? (
+                        <>
+                          <div className="text-text-primary font-semibold">
+                            {formatPrice(provider.tokens.output, provider.tokens.unit)}
+                          </div>
+                          <div className="text-text-muted text-xs">
+                            /1K tokens
+                          </div>
+                          <div className="text-text-muted text-xs">
+                            {provider.display_name}
+                          </div>
+                        </>
+                      ) : (
+                        <span className="text-text-muted">-</span>
+                      )}
                     </td>
                     
                     {/* 上下文窗口 */}

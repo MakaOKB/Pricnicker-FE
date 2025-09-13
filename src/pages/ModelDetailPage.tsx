@@ -43,17 +43,22 @@ const ModelDetailPage: React.FC = () => {
 
   // 计算价格
   const calculatePrice = (): PriceCalculatorResult | null => {
-    if (!model || !model.tokens) return null;
+    if (!model || !model.providers || model.providers.length === 0) return null;
     
-    const inputCost = (inputTokens / 1000) * model.tokens.input;
-    const outputCost = (outputTokens / 1000) * model.tokens.output;
+    // 使用最低价格的提供商进行计算
+    const minProvider = model.providers.reduce((min, current) => 
+      (current.tokens.input + current.tokens.output) < (min.tokens.input + min.tokens.output) ? current : min
+    );
+    
+    const inputCost = (inputTokens / 1000) * minProvider.tokens.input;
+    const outputCost = (outputTokens / 1000) * minProvider.tokens.output;
     const totalCost = inputCost + outputCost;
     
     return {
       inputCost,
       outputCost,
       totalCost,
-      unit: model.tokens.unit
+      unit: minProvider.tokens.unit
     };
   };
 
@@ -155,13 +160,13 @@ const ModelDetailPage: React.FC = () => {
                   </div>
                 )}
                 
-                {model.tokens && (
+                {model.providers && model.providers.length > 0 && (
                   <div className="flex items-center gap-3">
                     <CurrencyDollarIcon className="h-5 w-5 text-text-muted" />
                     <div>
                       <p className="text-text-secondary text-sm">价格单位</p>
                       <p className="text-text-primary font-semibold">
-                        {model.tokens.unit}
+                        {model.providers[0].tokens.unit}
                       </p>
                     </div>
                   </div>
@@ -196,21 +201,21 @@ const ModelDetailPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* 价格信息 */}
           <div className="lg:col-span-2">
-            {model.tokens && (
+            {model.providers && model.providers.length > 0 && (
               <div className="bg-background-secondary border border-neutral-300 rounded-lg p-6 mb-8">
                 <h2 className="text-xl font-semibold text-text-primary mb-6 flex items-center gap-2">
                   <CurrencyDollarIcon className="h-6 w-6" />
-                  价格信息
+                  价格范围
                 </h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="bg-background-primary rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                      <span className="text-text-secondary text-sm">输入价格</span>
+                      <span className="text-text-secondary text-sm">输入价格范围</span>
                     </div>
                     <p className="text-2xl font-bold text-text-primary">
-                      {formatPrice(model.tokens.input, model.tokens.unit)}
+                      {formatPrice(Math.min(...model.providers.map(p => p.tokens.input)), model.providers[0].tokens.unit)} - {formatPrice(Math.max(...model.providers.map(p => p.tokens.input)), model.providers[0].tokens.unit)}
                     </p>
                     <p className="text-text-muted text-sm">
                       /1K tokens
@@ -220,10 +225,10 @@ const ModelDetailPage: React.FC = () => {
                   <div className="bg-background-primary rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      <span className="text-text-secondary text-sm">输出价格</span>
+                      <span className="text-text-secondary text-sm">输出价格范围</span>
                     </div>
                     <p className="text-2xl font-bold text-text-primary">
-                      {formatPrice(model.tokens.output, model.tokens.unit)}
+                      {formatPrice(Math.min(...model.providers.map(p => p.tokens.output)), model.providers[0].tokens.unit)} - {formatPrice(Math.max(...model.providers.map(p => p.tokens.output)), model.providers[0].tokens.unit)}
                     </p>
                     <p className="text-text-muted text-sm">
                       /1K tokens
@@ -267,10 +272,10 @@ const ModelDetailPage: React.FC = () => {
                   </div>
                 )}
                 
-                {model.tokens && (
+                {model.providers && model.providers.length > 0 && (
                   <div className="flex justify-between items-center py-3">
                     <span className="text-text-secondary">价格单位</span>
-                    <span className="text-text-primary font-medium">{model.tokens.unit}</span>
+                    <span className="text-text-primary font-medium">{model.providers[0].tokens.unit}</span>
                   </div>
                 )}
               </div>
@@ -419,9 +424,9 @@ const ModelDetailPage: React.FC = () => {
                         <span className="text-primary-600 text-xs font-medium">
                           {similarModel.brand}
                         </span>
-                        {similarModel.tokens && (
+                        {similarModel.providers && similarModel.providers.length > 0 && (
                           <span className="text-text-muted text-xs">
-                            {formatPrice(similarModel.tokens.input, similarModel.tokens.unit)}
+                            {formatPrice(Math.min(...similarModel.providers.map(p => p.tokens.input)), similarModel.providers[0].tokens.unit)}
                           </span>
                         )}
                       </div>
