@@ -15,7 +15,7 @@
     "verbatimModuleSyntax": false,
     "moduleDetection": "force",
     "noEmit": true,
-    "jsx": "react-jsx",
+    "jsx": "preserve",
     "strict": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
@@ -27,10 +27,18 @@
       "@/*": [
         "./src/*"
       ]
-    }
+    },
+    "allowJs": true,
+    "incremental": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true
   },
   "include": [
     "src",
     "api"
+  ],
+  "exclude": [
+    "node_modules"
   ]
 }
